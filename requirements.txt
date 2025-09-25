@@ -1,0 +1,5 @@
+streamlit
+openai
+azure-cosmos
+pandas
+scikit-learn
