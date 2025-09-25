@@ -4,6 +4,7 @@ import json
 from openai import AzureOpenAI
 from azure.cosmos import CosmosClient
 import pandas as pd
+from datetime import datetime, timezone
 
 # --- 1. Configuration and Initialization ---
 
@@ -33,137 +34,130 @@ def get_clients():
 
 oai_client, container = get_clients()
 
-# --- 2. Core RAG Logic with Query Router ---
+# --- 2. Core "Text-to-SQL" Agent Logic ---
 
-def get_query_plan(user_question: str) -> dict:
-    """Uses an LLM to determine whether to perform a vector search or a direct query."""
+def generate_cosmos_sql(user_question: str, container_schema: dict) -> str:
+    """Uses an LLM to generate a Cosmos DB SQL query from a natural language question."""
+    
+    # Get today's date for context if the user asks for "today"
+    today_date = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    
     system_prompt = f"""
-You are an AI assistant that analyzes a user's question and decides the best way to query a Cosmos DB database containing GDELT event data.
-Based on the user's question, you must choose one of two tools: `vector_search` or `direct_query`.
+    You are an expert AI data analyst that translates natural language questions into valid Azure Cosmos DB for NoSQL queries.
+    Your goal is to generate a single, executable SQL query string and nothing else.
 
-1.  Use `vector_search` for semantic, conceptual, or similarity-based questions. These are typically "what about", "tell me about", or "find events similar to" questions.
-2.  Use `direct_query` for factual, specific, or aggregate questions that can be answered with a precise SQL query. Examples include questions about counts, maximums, minimums, averages, or filtering by specific values (e.g., dates, names, scores).
+    DATABASE SCHEMA:
+    - Container Name: c
+    - Available Columns: {json.dumps(container_schema, indent=2)}
 
-The available fields for `direct_query` are: `id`, `event_date`, `actor1_name`, `actor2_name`, `event_code`, `source_url`, `avg_tone`, `goldstein_scale`, `num_articles`, `themes`, `locations`, `persons`, `organizations`.
+    QUERY GENERATION RULES:
+    1.  **Vector Search**: If the question is semantic or conceptual (e.g., "tell me about", "what are some events related to"), use the `VectorDistance` function on the `c.contentVector` field. The query should look like: `SELECT TOP 5 c.id, c.content, c.source_url FROM c ORDER BY VectorDistance(c.contentVector, @query_vector)`
+    2.  **Aggregate/Fact-based Queries**: If the question asks for a specific number, count, max, min, or average, generate a standard SQL query.
+        - For counts, use `SELECT VALUE COUNT(1) FROM c ...`
+        - For other aggregations, use `SELECT VALUE MAX(c.fieldName) FROM c ...`
+    3.  **Filtering**: Use standard `WHERE` clauses. For text fields, use `CONTAINS(c.fieldName, 'value')`. For dates, use string comparison (e.g., `c.event_date = '{today_date}'`).
+    4.  **Hybrid Queries**: If the question combines semantic search with filters, create a query that includes both a `WHERE` clause and an `ORDER BY VectorDistance(...)`.
+    5.  **Response Format**: ALWAYS return ONLY the raw SQL query string. Do not add any explanations, markdown, or other text. If you cannot generate a query, return "SELECT 'Query generation failed: The question is too complex or ambiguous.'"
 
-You must return a JSON object with two keys:
--   `query_type`: A string, either "vector_search" or "direct_query".
--   `query`:
-    -   If `query_type` is "vector_search", this should be a concise, semantic version of the user's question to be used for embedding.
-    -   If `query_type` is "direct_query", this should be a valid Cosmos DB SQL query string to be executed directly. Use `c` as the alias for the container.
-
-Example 1:
-User Question: "Tell me about recent diplomatic events involving Japan."
-Your JSON Response:
-{{
-  "query_type": "vector_search",
-  "query": "recent diplomatic events involving Japan"
-}}
-
-Example 2:
-User Question: "How many events occurred on 2025-09-25?"
-Your JSON Response:
-{{
-  "query_type": "direct_query",
-  "query": "SELECT VALUE COUNT(1) FROM c WHERE c.event_date = '2025-09-25'"
-}}
-
-Example 3:
-User Question: "What is the highest avg_tone for events related to technology?"
-Your JSON Response:
-{{
-  "query_type": "direct_query",
-  "query": "SELECT VALUE MAX(c.avg_tone) FROM c WHERE CONTAINS(c.themes, 'technology')"
-}}
+    Today's date is {today_date}.
     """
     
     response = oai_client.chat.completions.create(
         model=AZURE_OPENAI_CHAT_DEPLOYMENT,
-        response_format={"type": "json_object"},
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_question}
         ]
     )
     
-    try:
-        plan = json.loads(response.choices[0].message.content)
-        if plan.get("query_type") not in ["vector_search", "direct_query"] or not plan.get("query"):
-            raise ValueError("Invalid plan format from LLM.")
-        return plan
-    except (json.JSONDecodeError, ValueError) as e:
-        st.error(f"Error generating query plan: {e}")
-        return {"query_type": "vector_search", "query": user_question} # Fallback
-
-def execute_query_plan(plan: dict) -> (str, list):
-    """Executes the plan generated by the LLM."""
-    query_type = plan["query_type"]
-    query = plan["query"]
+    sql_query = response.choices[0].message.content.strip()
     
-    if query_type == "vector_search":
-        query_vector = oai_client.embeddings.create(input=[query], model=AZURE_OPENAI_EMBEDDING_DEPLOYMENT).data[0].embedding
-        sql_query = "SELECT TOP 5 c.id, c.content, c.source_url FROM c ORDER BY VectorDistance(c.contentVector, @query_vector)"
-        params = [{"name": "@query_vector", "value": query_vector}]
-        results = list(container.query_items(sql_query, parameters=params, enable_cross_partition_query=True))
-        return "vector_search", results
+    # A simple validation to ensure it's a SELECT query
+    if not sql_query.upper().startswith("SELECT"):
+        raise ValueError("LLM did not generate a valid SELECT query.")
+        
+    return sql_query
 
-    elif query_type == "direct_query":
-        results = list(container.query_items(query, enable_cross_partition_query=True))
-        return "direct_query", results
+def interpret_results(user_question: str, sql_result: list) -> str:
+    """Uses an LLM to convert a raw SQL result into a natural language answer."""
+    
+    result_str = json.dumps(sql_result, indent=2)
+    system_prompt = f"""
+    You are an AI assistant. The user asked the following question:
+    "{user_question}"
 
-    return "unknown", []
+    A database query was executed, and it returned this JSON result:
+    {result_str}
+
+    Your task is to interpret this result and provide a friendly, natural language answer to the user's original question.
+    If the result is a single value (like a count or an average), state it clearly.
+    If the result is a list of items, summarize them briefly.
+    If the result is empty, state that no data was found.
+    """
+    
+    response = oai_client.chat.completions.create(
+        model=AZURE_OPENAI_CHAT_DEPLOYMENT,
+        messages=[{"role": "system", "content": system_prompt}]
+    )
+    return response.choices[0].message.content
 
 # --- 3. Streamlit User Interface ---
 
-st.set_page_config(page_title="GDELT RAG Assistant", layout="wide")
+st.set_page_config(page_title="GDELT Intelligent Assistant", layout="wide")
 st.title("🤖 GDELT Intelligent Query Assistant")
 
+# Define the schema for the LLM
+container_schema = {
+    "id": "string (unique identifier)",
+    "event_date": "string (YYYY-MM-DD)",
+    "actor1_name": "string",
+    "actor2_name": "string",
+    "avg_tone": "number",
+    "goldstein_scale": "number",
+    "num_articles": "number",
+    "themes": "string (semicolon-separated)",
+    "locations": "string (semicolon-separated)",
+    "persons": "string (semicolon-separated)",
+    "organizations": "string (semicolon-separated)",
+    "content": "string (summary for vector search)",
+    "contentVector": "array of numbers (for semantic search)"
+}
+
 if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "assistant", "content": "Ask me anything about the GDELT data, from semantic searches to specific queries!"}]
+    st.session_state.messages = [{"role": "assistant", "content": "Ask me anything! For example: 'How many events happened today?' or 'Tell me about climate change protests.'"}]
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-if prompt := st.chat_input("e.g., 'What is the max goldstein_scale for events involving France?'"):
+if prompt := st.chat_input("Your question..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        with st.spinner("Analyzing question and executing query..."):
-            # 1. Get the query plan from the LLM
-            plan = get_query_plan(prompt)
-            st.sidebar.subheader("Query Plan")
-            st.sidebar.json(plan)
+        with st.spinner("Analyzing question and querying database..."):
+            try:
+                # 1. Generate the SQL query from the user's question
+                sql_query = generate_cosmos_sql(prompt, container_schema)
+                st.sidebar.subheader("Generated SQL Query")
+                st.sidebar.code(sql_query, language="sql")
 
-            # 2. Execute the plan
-            result_type, results = execute_query_plan(plan)
+                params = []
+                # If it's a vector search query, we need to generate the vector embedding
+                if "VectorDistance" in sql_query:
+                    query_vector = oai_client.embeddings.create(input=[prompt], model=AZURE_OPENAI_EMBEDDING_DEPLOYMENT).data[0].embedding
+                    params.append({"name": "@query_vector", "value": query_vector})
 
-            # 3. Generate the final answer based on the result type
-            if not results:
-                final_answer = "I couldn't find any data matching your query."
-            elif result_type == "direct_query":
-                # For direct queries, format the raw JSON/data into a readable table or text
-                st.subheader("Direct Query Result:")
-                try:
-                    df = pd.DataFrame(results)
-                    st.dataframe(df)
-                    final_answer = "Here is the direct result from the database."
-                except Exception:
-                    st.json(results)
-                    final_answer = "Here is the direct JSON result from the database."
-            
-            elif result_type == "vector_search":
-                # For vector searches, use an LLM to synthesize an answer from the context
-                context = "\n\n---\n\n".join([f"Source: {item['source_url']}\nContent: {item['content']}" for item in results])
-                system_prompt = f"Answer the user's question: '{prompt}' based ONLY on the following context:\n\n{context}"
-                
-                completion = oai_client.chat.completions.create(
-                    model=AZURE_OPENAI_CHAT_DEPLOYMENT,
-                    messages=[{"role": "system", "content": system_prompt}]
-                )
-                final_answer = completion.choices[0].message.content
+                # 2. Execute the query
+                results = list(container.query_items(sql_query, parameters=params, enable_cross_partition_query=True))
+
+                # 3. Interpret the results and generate a natural language answer
+                final_answer = interpret_results(prompt, results)
                 st.markdown(final_answer)
+
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
+                final_answer = "Sorry, I encountered an error while processing your request."
 
     st.session_state.messages.append({"role": "assistant", "content": final_answer})
