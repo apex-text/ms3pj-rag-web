@@ -204,7 +204,7 @@ st.markdown("""
 
     /* The direct content area of the expander */
     div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] > div:nth-of-type(1) {
-        height: 65vh; /* Set a fixed height for the content area */
+        max-height: 45vh; /* Set a MAX height for the content area */
         display: flex;
         flex-direction: column;
     }
