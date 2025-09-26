@@ -130,9 +130,11 @@ def render_floating_chat():
             st.session_state.messages = [{"role": "assistant", "content": "Ask me anything! For example: 'How many events happened today?' or 'Tell me about climate change protests.'"}]
 
         # Display chat history
-        for message in st.session_state.messages:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
+        chat_container = st.container()
+        with chat_container:
+            for message in st.session_state.messages:
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
 
         # Handle new user input
         if prompt := st.chat_input("Your question..."):
@@ -189,17 +191,10 @@ st.markdown("""
         border-radius: 10px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
-    /* Make the main content block a flex container */
-    div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] {
-        display: flex;
-        flex-direction: column;
-        /* Set a max-height for the entire content area */
-        max-height: 70vh;
-    }
-    /* Target the container of the chat messages to make it scrollable */
+    /* This targets the st.container() we added for the chat history */
     div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] > div:nth-of-type(1) {
-        flex-grow: 1; /* Allow this container to grow and fill available space */
-        overflow-y: auto; /* Add a scrollbar when content overflows */
+        max-height: 60vh;
+        overflow-y: auto;
     }
     /* Optional: Style the header of the expander to make it look more like a chat header */
     div[data-testid="stExpander"] > div[role="button"] {
@@ -211,7 +206,6 @@ st.markdown("""
     /* Ensure the chat input is visible within the floating container */
     div[data-testid="stExpander"] .stChatInput {
         background-color: #FFFFFF;
-        flex-shrink: 0; /* Prevent the input from shrinking */
     }
 </style>
 """, unsafe_allow_html=True)
