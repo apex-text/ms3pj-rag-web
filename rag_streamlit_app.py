@@ -212,7 +212,7 @@ st.markdown("""
     /* Target the st.container() holding the messages (first child) */
     div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] > div:nth-of-type(1) > div:nth-of-type(1) {
         flex-grow: 1;      /* Allow the message container to grow */
-        overflow-y: auto;  /* Make it scrollable */
+        overflow-y: false ;  /* Make it not scrollable */
         padding-right: 10px; /* Add some padding for the scrollbar */
     }
 
