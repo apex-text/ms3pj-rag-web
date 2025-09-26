@@ -190,7 +190,7 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
     /* This targets the content area of the expander to make it scrollable */
-    div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] {
+    div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] > div:nth-of-type(1) > div:nth-of-type(1) {
         max-height: 60vh; /* Limit height to 60% of the viewport height */
         overflow-y: auto;
     }
