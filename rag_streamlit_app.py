@@ -125,23 +125,27 @@ def render_floating_chat():
     }
 
     with st.expander("🤖 GDELT Assistant", expanded=True):
-        # Initialize session state for chat messages
+        # This container holds the scrollable chat history
+        message_container = st.container()
+
+        # This container holds the input box
+        input_container = st.container()
+
+        # Initialize or get chat history
         if "messages" not in st.session_state:
             st.session_state.messages = [{"role": "assistant", "content": "Ask me anything! For example: 'How many events happened today?' or 'Tell me about climate change protests.'"}]
 
-        # Display chat history
-        for message in st.session_state.messages:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
+        # Display chat history in the message container
+        with message_container:
+            for message in st.session_state.messages:
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
 
-        # Handle new user input
-        if prompt := st.chat_input("Your question..."):
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            with st.chat_message("user"):
-                st.markdown(prompt)
+        # Handle new user input in the input container
+        with input_container:
+            if prompt := st.chat_input("Your question..."):
+                st.session_state.messages.append({"role": "user", "content": prompt})
 
-            # Process the user's question
-            with st.chat_message("assistant"):
                 with st.spinner("Analyzing question and querying database..."):
                     try:
                         # 1. Generate SQL query
@@ -162,13 +166,13 @@ def render_floating_chat():
 
                         # 4. Interpret results for a natural language answer
                         final_answer = interpret_results(prompt, results)
-                        st.markdown(final_answer)
 
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
                         final_answer = "Sorry, I encountered an error while processing your request."
 
-            st.session_state.messages.append({"role": "assistant", "content": final_answer})
+                st.session_state.messages.append({"role": "assistant", "content": final_answer})
+                st.rerun()
 
 # --- Main App Layout ---
 st.set_page_config(page_title="GDELT Dashboard", layout="wide")
@@ -176,7 +180,7 @@ st.set_page_config(page_title="GDELT Dashboard", layout="wide")
 # 1. Inject CSS to style the st.expander as a floating widget
 st.markdown("""
 <style>
-    /* This targets the container of the expander */
+    /* Main container for the floating expander */
     div[data-testid="stExpander"] {
         position: fixed;
         bottom: 2rem;
@@ -189,29 +193,32 @@ st.markdown("""
         border-radius: 10px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
-    /* Make the main content block a flex container */
-    div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] {
-        display: flex;
-        flex-direction: column;
-        /* Set a max-height for the entire content area (header + messages + input) */
-        max-height: 75vh;
-    }
-    /* Target the container of the chat messages to make it scrollable */
-    div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] > div:nth-of-type(1) {
-        flex-grow: 1;      /* Allow this container to grow and fill available space */
-        overflow-y: auto;  /* Add a scrollbar when content overflows */
-    }
-    /* Optional: Style the header of the expander to make it look more like a chat header */
+
+    /* Expander header styling */
     div[data-testid="stExpander"] > div[role="button"] {
         background-color: #007bff;
         color: white;
         border-radius: 8px 8px 0 0;
         font-weight: bold;
     }
-    /* Ensure the chat input is visible and fixed at the bottom */
-    div[data-testid="stExpander"] .stChatInput {
-        background-color: #FFFFFF;
-        flex-shrink: 0; /* Prevent the input from shrinking */
+
+    /* The direct content area of the expander */
+    div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] > div:nth-of-type(1) {
+        height: 65vh; /* Set a fixed height for the content area */
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Target the st.container() holding the messages (first child) */
+    div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] > div:nth-of-type(1) > div:nth-of-type(1) {
+        flex-grow: 1;      /* Allow the message container to grow */
+        overflow-y: auto;  /* Make it scrollable */
+        padding-right: 10px; /* Add some padding for the scrollbar */
+    }
+
+    /* Target the st.container() for the chat input (second child) */
+    div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] > div:nth-of-type(1) > div:nth-of-type(2) {
+        flex-shrink: 0; /* Prevent the input container from shrinking */
     }
 </style>
 """, unsafe_allow_html=True)
