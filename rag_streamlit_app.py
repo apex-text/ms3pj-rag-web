@@ -212,7 +212,7 @@ dashboard_choice = st.sidebar.radio(
 
 # IMPORTANT: Replace these URLs with the public or embeddable URLs of your dashboards
 SUPERSET_URL = "https://superset.apache.org/docs/intro"  # Placeholder URL
-POWERBI_URL = "https://app.powerbi.com/reportEmbed?reportId=60b4e583-90df-4d0a-8719-81f5a29eccd1&autoAuth=true&ctid=8f91900e-dfe5-480a-9a92-56239f989454" # Placeholder URL
+POWERBI_URL = "https://app.powerbi.com/view?r=eyJrIjoiNDJlN2RmMDAtZDg5Ni00MjA3LThiZjMtMDQyZGQ1NDU3Njg2IiwidCI6IjhmOTE5MDBlLWRmZTUtNDgwYS05YTkyLTU2MjM5Zjk4OTQ1NCJ9" # Placeholder URL
 
 st.info("사이드바에서 대시보드를 선택하세요. 실제 대시보드 URL로 교체해야 합니다.", icon="ℹ️")
 
