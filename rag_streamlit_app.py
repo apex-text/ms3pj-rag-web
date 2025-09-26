@@ -189,6 +189,11 @@ st.markdown("""
         border-radius: 10px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
+    /* This targets the content area of the expander to make it scrollable */
+    div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] {
+        max-height: 60vh; /* Limit height to 60% of the viewport height */
+        overflow-y: auto;
+    }
     /* Optional: Style the header of the expander to make it look more like a chat header */
     div[data-testid="stExpander"] > div[role="button"] {
         background-color: #007bff;
@@ -214,7 +219,7 @@ dashboard_choice = st.sidebar.radio(
 SUPERSET_URL = "https://superset.apache.org/docs/intro"  # Placeholder URL
 POWERBI_URL = "https://app.powerbi.com/view?r=eyJrIjoiNDJlN2RmMDAtZDg5Ni00MjA3LThiZjMtMDQyZGQ1NDU3Njg2IiwidCI6IjhmOTE5MDBlLWRmZTUtNDgwYS05YTkyLTU2MjM5Zjk4OTQ1NCJ9" # Placeholder URL
 
-st.info("사이드바에서 대시보드를 선택하세요. 실제 대시보드 URL로 교체해야 합니다.", icon="ℹ️")
+st.info("사이드바에서 대시보드를 선택하세요.", icon="ℹ️")
 
 # 3. Display the selected dashboard
 if dashboard_choice == "Superset":
