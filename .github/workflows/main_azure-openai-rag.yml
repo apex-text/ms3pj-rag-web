@@ -30,7 +30,7 @@ jobs:
           source venv/bin/activate
       
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install --upgrade -r requirements.txt
         
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
@@ -38,9 +38,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: |
-            .
-            !venv/
+          path: . # Path is now '.' to include the venv folder
 
   deploy:
     runs-on: ubuntu-latest
@@ -68,5 +66,4 @@ jobs:
         with:
           app-name: 'azure-openai-rag'
           slot-name: 'Production'
-
-          
+          package: . # Deploy the entire directory as a package
