@@ -103,61 +103,126 @@ def interpret_results(user_question: str, sql_result: list) -> str:
 
 # --- 3. Streamlit User Interface ---
 
-st.set_page_config(page_title="GDELT Intelligent Assistant", layout="wide")
-st.title("🤖 GDELT Intelligent Query Assistant")
+def render_floating_chat():
+    """Renders the floating chat widget using a styled st.expander."""
 
-# Define the schema for the LLM
-container_schema = {
-    "id": "string (unique identifier)",
-    "event_date": "string (YYYY-MM-DD)",
-    "actor1_name": "string",
-    "actor2_name": "string",
-    "avg_tone": "number",
-    "goldstein_scale": "number",
-    "num_articles": "number",
-    "themes": "string (semicolon-separated)",
-    "locations": "string (semicolon-separated)",
-    "persons": "string (semicolon-separated)",
-    "organizations": "string (semicolon-separated)",
-    "content": "string (summary for vector search)",
-    "contentVector": "array of numbers (for semantic search)"
-}
+    # Define the schema for the LLM inside the function or pass it as an argument
+    container_schema = {
+        "id": "string (unique identifier)",
+        "event_date": "string (YYYY-MM-DD)",
+        "actor1_name": "string",
+        "actor2_name": "string",
+        "avg_tone": "number",
+        "goldstein_scale": "number",
+        "num_articles": "number",
+        "themes": "string (semicolon-separated)",
+        "locations": "string (semicolon-separated)",
+        "persons": "string (semicolon-separated)",
+        "organizations": "string (semicolon-separated)",
+        "content": "string (summary for vector search)",
+        "contentVector": "array of numbers (for semantic search)"
+    }
 
-if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "assistant", "content": "Ask me anything! For example: 'How many events happened today?' or 'Tell me about climate change protests.'"}]
+    with st.expander("🤖 GDELT Assistant", expanded=True):
+        # Initialize session state for chat messages
+        if "messages" not in st.session_state:
+            st.session_state.messages = [{"role": "assistant", "content": "Ask me anything! For example: 'How many events happened today?' or 'Tell me about climate change protests.'"}]
 
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+        # Display chat history
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
 
-if prompt := st.chat_input("Your question..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
+        # Handle new user input
+        if prompt := st.chat_input("Your question..."):
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
 
-    with st.chat_message("assistant"):
-        with st.spinner("Analyzing question and querying database..."):
-            try:
-                # 1. Generate the SQL query from the user's question
-                sql_query = generate_cosmos_sql(prompt, container_schema)
-                st.sidebar.subheader("Generated SQL Query")
-                st.sidebar.code(sql_query, language="sql")
+            # Process the user's question
+            with st.chat_message("assistant"):
+                with st.spinner("Analyzing question and querying database..."):
+                    try:
+                        # 1. Generate SQL query
+                        sql_query = generate_cosmos_sql(prompt, container_schema)
+                        
+                        # Display generated query in the main sidebar for debugging
+                        st.sidebar.subheader("Last Generated SQL Query")
+                        st.sidebar.code(sql_query, language="sql")
 
-                params = []
-                # If it's a vector search query, we need to generate the vector embedding
-                if "VectorDistance" in sql_query:
-                    query_vector = oai_client.embeddings.create(input=[prompt], model=AZURE_OPENAI_EMBEDDING_DEPLOYMENT).data[0].embedding
-                    params.append({"name": "@query_vector", "value": query_vector})
+                        params = []
+                        # 2. Generate vector embedding if needed
+                        if "VectorDistance" in sql_query:
+                            query_vector = oai_client.embeddings.create(input=[prompt], model=AZURE_OPENAI_EMBEDDING_DEPLOYMENT).data[0].embedding
+                            params.append({"name": "@query_vector", "value": query_vector})
 
-                # 2. Execute the query
-                results = list(container.query_items(sql_query, parameters=params, enable_cross_partition_query=True))
+                        # 3. Execute query
+                        results = list(container.query_items(sql_query, parameters=params, enable_cross_partition_query=True))
 
-                # 3. Interpret the results and generate a natural language answer
-                final_answer = interpret_results(prompt, results)
-                st.markdown(final_answer)
+                        # 4. Interpret results for a natural language answer
+                        final_answer = interpret_results(prompt, results)
+                        st.markdown(final_answer)
 
-            except Exception as e:
-                st.error(f"An error occurred: {e}")
-                final_answer = "Sorry, I encountered an error while processing your request."
+                    except Exception as e:
+                        st.error(f"An error occurred: {e}")
+                        final_answer = "Sorry, I encountered an error while processing your request."
 
-    st.session_state.messages.append({"role": "assistant", "content": final_answer})
+            st.session_state.messages.append({"role": "assistant", "content": final_answer})
+
+# --- Main App Layout ---
+st.set_page_config(page_title="GDELT Dashboard", layout="wide")
+
+# 1. Inject CSS to style the st.expander as a floating widget
+st.markdown("""
+<style>
+    /* This targets the container of the expander */
+    div[data-testid="stExpander"] {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        width: 450px;
+        max-width: 90vw;
+        z-index: 1000;
+        background-color: #FFFFFF;
+        border: 1px solid #CCCCCC;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    /* Optional: Style the header of the expander to make it look more like a chat header */
+    div[data-testid="stExpander"] > div[role="button"] {
+        background-color: #007bff;
+        color: white;
+        border-radius: 8px 8px 0 0;
+        font-weight: bold;
+    }
+    /* Ensure the chat input is visible within the floating container */
+    div[data-testid="stExpander"] .stChatInput {
+        background-color: #FFFFFF;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# 2. Dashboard Selection in the Sidebar
+st.sidebar.title("Dashboard Selection")
+dashboard_choice = st.sidebar.radio(
+    "Choose a dashboard to display:",
+    ("Superset", "Power BI")
+)
+
+# IMPORTANT: Replace these URLs with the public or embeddable URLs of your dashboards
+SUPERSET_URL = "https://superset.apache.org/docs/intro"  # Placeholder URL
+POWERBI_URL = "https://app.powerbi.com/view?r=eyJrIjoiY..." # Placeholder URL
+
+st.info("사이드바에서 대시보드를 선택하세요. 실제 대시보드 URL로 교체해야 합니다.", icon="ℹ️")
+
+# 3. Display the selected dashboard
+if dashboard_choice == "Superset":
+    st.header("Superset Dashboard")
+    st.iframe(SUPERSET_URL, height=1000, scrolling=True)
+else:
+    st.header("Power BI Dashboard")
+    st.iframe(POWERBI_URL, height=1000, scrolling=True)
+
+
+# 4. Render the floating chat widget
+render_floating_chat()
