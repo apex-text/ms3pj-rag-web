@@ -1,4 +1,4 @@
-streamlit>=1.1.0
+streamlit
 openai
 azure-cosmos
 pandas
