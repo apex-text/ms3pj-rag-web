@@ -30,7 +30,7 @@ jobs:
           source venv/bin/activate
       
       - name: Install dependencies
-        run: pip install --upgrade -r requirements.txt
+        run: pip install --upgrade && pip install -r requirements.txt
         
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
@@ -68,4 +68,5 @@ jobs:
         with:
           app-name: 'azure-openai-rag'
           slot-name: 'Production'
+
           
