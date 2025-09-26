@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import os
 import json
 from openai import AzureOpenAI
@@ -211,17 +212,17 @@ dashboard_choice = st.sidebar.radio(
 
 # IMPORTANT: Replace these URLs with the public or embeddable URLs of your dashboards
 SUPERSET_URL = "https://superset.apache.org/docs/intro"  # Placeholder URL
-POWERBI_URL = "https://app.powerbi.com/view?r=eyJrIjoiNDJlN2RmMDAtZDg5Ni00MjA3LThiZjMtMDQyZGQ1NDU3Njg2IiwidCI6IjhmOTE5MDBlLWRmZTUtNDgwYS05YTkyLTU2MjM5Zjk4OTQ1NCJ9" # Placeholder URL
+POWERBI_URL = "https://app.powerbi.com/view?r=eyJrIjoiY..." # Placeholder URL
 
 st.info("사이드바에서 대시보드를 선택하세요. 실제 대시보드 URL로 교체해야 합니다.", icon="ℹ️")
 
 # 3. Display the selected dashboard
 if dashboard_choice == "Superset":
     st.header("Superset Dashboard")
-    st.iframe(SUPERSET_URL, height=1000, scrolling=True)
+    components.iframe(SUPERSET_URL, height=1000, scrolling=True)
 else:
     st.header("Power BI Dashboard")
-    st.iframe(POWERBI_URL, height=1000, scrolling=True)
+    components.iframe(POWERBI_URL, height=1000, scrolling=True)
 
 
 # 4. Render the floating chat widget
