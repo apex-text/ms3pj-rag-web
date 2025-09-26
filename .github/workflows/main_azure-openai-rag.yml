@@ -38,7 +38,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: . # Path is now '.' to include the venv folder
+          path: |
+            .
+            !venv/
 
   deploy:
     runs-on: ubuntu-latest
@@ -66,4 +68,3 @@ jobs:
         with:
           app-name: 'azure-openai-rag'
           slot-name: 'Production'
-          package: . # Deploy the entire directory as a package
