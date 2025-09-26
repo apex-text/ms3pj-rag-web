@@ -189,10 +189,17 @@ st.markdown("""
         border-radius: 10px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
-    /* This targets the content area of the expander to make it scrollable */
-    div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] > div:nth-of-type(1) > div:nth-of-type(1) {
-        max-height: 60vh; /* Limit height to 60% of the viewport height */
-        overflow-y: auto;
+    /* Make the main content block a flex container */
+    div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] {
+        display: flex;
+        flex-direction: column;
+        /* Set a max-height for the entire content area */
+        max-height: 70vh;
+    }
+    /* Target the container of the chat messages to make it scrollable */
+    div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] > div:nth-of-type(1) {
+        flex-grow: 1; /* Allow this container to grow and fill available space */
+        overflow-y: auto; /* Add a scrollbar when content overflows */
     }
     /* Optional: Style the header of the expander to make it look more like a chat header */
     div[data-testid="stExpander"] > div[role="button"] {
@@ -204,6 +211,7 @@ st.markdown("""
     /* Ensure the chat input is visible within the floating container */
     div[data-testid="stExpander"] .stChatInput {
         background-color: #FFFFFF;
+        flex-shrink: 0; /* Prevent the input from shrinking */
     }
 </style>
 """, unsafe_allow_html=True)
