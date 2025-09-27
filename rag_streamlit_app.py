@@ -181,28 +181,29 @@ st.set_page_config(page_title="GDELT Dashboard", layout="wide", initial_sidebar_
 st.markdown("""
 <style>
     /* --- Fullscreen Iframe Styles --- */
-    /* Remove all padding and margins and hide the header for a true full-screen experience */
     .main .block-container {
         padding: 0 !important;
     }
     header[data-testid="stHeader"] {
         display: none !important;
     }
-    iframe {
+
+    /* Create a container that fills the viewport and hides overflow */
+    .iframe-container {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        border: none;
-        z-index: 1; /* Place it behind the chat */
+        overflow: hidden; /* This is the key to hiding the bottom part */
+        z-index: 1;
     }
 
-    /* --- Attempt to hide Power BI logo bar --- */
-    /* NOTE: This is unlikely to work due to cross-origin browser security policies, 
-       but is included as an attempt per user request. */
-    iframe .logoBar {
-        display: none !important;
+    /* Style the iframe to be taller than the container, pushing the bottom out of view */
+    .iframe-container iframe {
+        width: 100%;
+        height: calc(100% + 36px); /* Make it 36px taller */
+        border: none;
     }
 
     /* --- Floating Chat Widget Styles (z-index: 1000) --- */
@@ -252,8 +253,8 @@ st.markdown("""
 # 2. Display the Power BI dashboard in fullscreen
 st.sidebar.title("SQL Query")
 POWERBI_URL = "https://app.powerbi.com/view?r=eyJrIjoiNDJlN2RmMDAtZDg5Ni00MjA3LThiZjMtMDQyZGQ1NDU3Njg2IiwidCI6IjhmOTE5MDBlLWRmZTUtNDgwYS05YTkyLTU2MjM5Zjk4OTQ1NCJ9"
-# Use a raw iframe with CSS for fullscreen, replacing st.header and components.iframe
-st.markdown(f'<iframe src="{POWERBI_URL}"></iframe>', unsafe_allow_html=True)
+# Use a container to clip the oversized iframe, effectively hiding the bottom logo bar
+st.markdown(f'<div class="iframe-container"><iframe src="{POWERBI_URL}"></iframe></div>', unsafe_allow_html=True)
 
 
 # IMPORTANT: Replace these URLs with the public or embeddable URLs of your dashboards
