@@ -224,7 +224,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 2. Display the Power BI dashboard
-st.sidebar.title("Dashboard")
+st.sidebar.title("SQL Query")
 st.header("Power BI Dashboard")
 POWERBI_URL = "https://app.powerbi.com/view?r=eyJrIjoiNDJlN2RmMDAtZDg5Ni00MjA3LThiZjMtMDQyZGQ1NDU3Njg2IiwidCI6IjhmOTE5MDBlLWRmZTUtNDgwYS05YTkyLTU2MjM5Zjk4OTQ1NCJ9"
 components.iframe(POWERBI_URL, height=700, scrolling=True)
@@ -233,8 +233,6 @@ components.iframe(POWERBI_URL, height=700, scrolling=True)
 # IMPORTANT: Replace these URLs with the public or embeddable URLs of your dashboards
  # Placeholder URL
 
-st.info("사이드바에서 대시보드를 선택하세요.", icon="ℹ️")
 
-
-# 4. Render the floating chat widget
+# 3. Render the floating chat widget
 render_floating_chat()
