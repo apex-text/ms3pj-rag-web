@@ -204,7 +204,7 @@ st.markdown("""
 
     /* The direct content area of the expander */
     div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] > div:nth-of-type(1) {
-        max-height: 45vh; /* Set a MAX height for the content area */
+        max-height: 65vh; /* Set a MAX height for the content area */
         display: flex;
         flex-direction: column;
     }
@@ -212,7 +212,6 @@ st.markdown("""
     /* Target the st.container() holding the messages (first child) */
     div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] > div:nth-of-type(1) > div:nth-of-type(1) {
         flex-grow: 1;      /* Allow the message container to grow */
-        overflow-y: false ;  /* Make it not scrollable */
         padding-right: 10px; /* Add some padding for the scrollbar */
     }
 
