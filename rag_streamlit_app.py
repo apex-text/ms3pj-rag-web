@@ -124,7 +124,7 @@ def render_floating_chat():
         "contentVector": "array of numbers (for semantic search)"
     }
 
-    with st.expander("🤖 GDELT Assistant", expanded=True):
+    with st.expander("🤖 GDELT Assistant", expanded=False):
         # This container holds the scrollable chat history
         message_container = st.container()
 
@@ -206,6 +206,7 @@ st.markdown("""
     div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] > div:nth-of-type(1) {
         max-height: 65vh; /* Set a MAX height for the content area */
         display: flex;
+        overflow-y: auto;  /* Make this container scrollable */
         flex-direction: column;
     }
 
@@ -238,10 +239,10 @@ st.info("사이드바에서 대시보드를 선택하세요.", icon="ℹ️")
 # 3. Display the selected dashboard
 if dashboard_choice == "Superset":
     st.header("Superset Dashboard")
-    components.iframe(SUPERSET_URL, height=1000, scrolling=True)
+    components.iframe(SUPERSET_URL, height=700, scrolling=True)
 else:
     st.header("Power BI Dashboard")
-    components.iframe(POWERBI_URL, height=1000, scrolling=True)
+    components.iframe(POWERBI_URL, height=700, scrolling=True)
 
 
 # 4. Render the floating chat widget
