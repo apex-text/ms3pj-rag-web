@@ -175,7 +175,7 @@ def render_floating_chat():
                 st.rerun()
 
 # --- Main App Layout ---
-st.set_page_config(page_title="GDELT Dashboard", layout="wide")
+st.set_page_config(page_title="GDELT Dashboard", layout="wide", initial_sidebar_state="collapsed")
 
 # 1. Inject CSS to style the st.expander as a floating widget
 st.markdown("""
