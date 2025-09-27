@@ -177,9 +177,28 @@ def render_floating_chat():
 # --- Main App Layout ---
 st.set_page_config(page_title="GDELT Dashboard", layout="wide", initial_sidebar_state="collapsed")
 
-# 1. Inject CSS to style the st.expander as a floating widget
+# 1. Inject CSS for fullscreen Power BI and floating chat
 st.markdown("""
 <style>
+    /* --- Fullscreen Iframe Styles --- */
+    /* Remove all padding and margins and hide the header for a true full-screen experience */
+    .main .block-container {
+        padding: 0 !important;
+    }
+    header[data-testid="stHeader"] {
+        display: none !important;
+    }
+    iframe {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+        z-index: 1; /* Place it behind the chat */
+    }
+
+    /* --- Floating Chat Widget Styles (z-index: 1000) --- */
     /* Main container for the floating expander */
     div[data-testid="stExpander"] {
         position: fixed;
@@ -223,11 +242,11 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 2. Display the Power BI dashboard
+# 2. Display the Power BI dashboard in fullscreen
 st.sidebar.title("SQL Query")
-st.header("Power BI Dashboard")
 POWERBI_URL = "https://app.powerbi.com/view?r=eyJrIjoiNDJlN2RmMDAtZDg5Ni00MjA3LThiZjMtMDQyZGQ1NDU3Njg2IiwidCI6IjhmOTE5MDBlLWRmZTUtNDgwYS05YTkyLTU2MjM5Zjk4OTQ1NCJ9"
-components.iframe(POWERBI_URL, height=700, scrolling=True)
+# Use a raw iframe with CSS for fullscreen, replacing st.header and components.iframe
+st.markdown(f'<iframe src="{POWERBI_URL}"></iframe>', unsafe_allow_html=True)
 
 
 # IMPORTANT: Replace these URLs with the public or embeddable URLs of your dashboards
