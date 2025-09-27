@@ -198,6 +198,13 @@ st.markdown("""
         z-index: 1; /* Place it behind the chat */
     }
 
+    /* --- Attempt to hide Power BI logo bar --- */
+    /* NOTE: This is unlikely to work due to cross-origin browser security policies, 
+       but is included as an attempt per user request. */
+    iframe .logoBar {
+        display: none !important;
+    }
+
     /* --- Floating Chat Widget Styles (z-index: 1000) --- */
     /* Main container for the floating expander */
     div[data-testid="stExpander"] {
