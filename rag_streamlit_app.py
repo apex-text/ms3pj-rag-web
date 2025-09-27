@@ -223,26 +223,16 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 2. Dashboard Selection in the Sidebar
-st.sidebar.title("Dashboard Selection")
-dashboard_choice = st.sidebar.radio(
-    "Choose a dashboard to display:",
-    ("Superset", "Power BI")
-)
+# 2. Display the Power BI dashboard
+st.sidebar.title("Dashboard")
+st.header("Power BI Dashboard")
+components.iframe(POWERBI_URL, height=700, scrolling=True)
+
 
 # IMPORTANT: Replace these URLs with the public or embeddable URLs of your dashboards
-SUPERSET_URL = "https://superset.apache.org/docs/intro"  # Placeholder URL
 POWERBI_URL = "https://app.powerbi.com/view?r=eyJrIjoiNDJlN2RmMDAtZDg5Ni00MjA3LThiZjMtMDQyZGQ1NDU3Njg2IiwidCI6IjhmOTE5MDBlLWRmZTUtNDgwYS05YTkyLTU2MjM5Zjk4OTQ1NCJ9" # Placeholder URL
 
 st.info("사이드바에서 대시보드를 선택하세요.", icon="ℹ️")
-
-# 3. Display the selected dashboard
-if dashboard_choice == "Superset":
-    st.header("Superset Dashboard")
-    components.iframe(SUPERSET_URL, height=700, scrolling=True)
-else:
-    st.header("Power BI Dashboard")
-    components.iframe(POWERBI_URL, height=700, scrolling=True)
 
 
 # 4. Render the floating chat widget
