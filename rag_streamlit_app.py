@@ -111,6 +111,12 @@ def interpret_results(chat_history: list, sql_result: list) -> str:
 
 # --- 3. Streamlit User Interface ---
 
+def log_to_browser(message):
+    """Injects a script to log a message to the browser's console."""
+    # Escape characters for safe injection into a JavaScript template literal
+    escaped_message = message.replace('\\', '\\\\').replace('`', '\`').replace('"', '\"').replace("'", "\'\'")
+    components.html(f'<script>console.error(`{escaped_message}`)</script>', height=0)
+
 def render_floating_chat():
     """Renders the floating chat widget using a styled st.expander."""
 
@@ -168,13 +174,16 @@ def render_floating_chat():
                         else:
                             tb_str = traceback.format_exc()
                             error_details = tb_str
+                        
+                        # Log detailed error to browser console for debugging
+                        log_to_browser(f"RAG App Error: {e}\n{error_details}")
 
                         st.error(f"An error occurred: {e}")
                         with st.expander("Click to see full error details"):
                             st.code(error_details)
 
                 st.session_state.messages.append({"role": "assistant", "content": final_answer})
-                st.rerun()
+                # The st.rerun() call that was here has been removed.
 
 # --- Main App Layout ---
 st.set_page_config(page_title="GDELT Dashboard", layout="wide", initial_sidebar_state="collapsed")
