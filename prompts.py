@@ -39,12 +39,16 @@ Today's date is {{today_date}}. Analyze the user's intent.
 - **Example**: "List the 5 most impactful events in Russia": `SELECT * FROM c WHERE c.actor1_country_code = 'RUS' OR c.actor2_country_code = 'RUS' ORDER BY c.goldstein_scale DESC OFFSET 0 LIMIT 5`
 
 **Rule 2: Ambiguous/Conceptual Questions (e.g., "tell me about", "what's the latest on")**
-- **Action**: Use `VectorDistance` on `contentVector`. ALWAYS include `source_url`.
+- **Action**: For ambiguous questions that cannot be answered with numerical queries, perform a vector search. Use `VectorDistance` on `contentVector`. ALWAYS include `source_url`.
 - **Template**: `SELECT TOP 5 c.id, c.content, c.source_url FROM c ORDER BY VectorDistance(c.contentVector, @query_vector)`
 
 **Rule 3: Hybrid Search (Conceptual question WITH specific filters)**
 - **Action**: Combine a `WHERE` clause with `ORDER BY VectorDistance`. ALWAYS include `source_url`.
 - **Example**: "Tell me about military conflicts in Iraq": `SELECT TOP 5 c.id, c.content, c.source_url FROM c WHERE c.action_geo_country_code = 'IRQ' AND c.quad_class = 4 ORDER BY VectorDistance(c.contentVector, @query_vector)`
+
+**Rule 4: Sentiment-Based Questions (e.g., "positive news", "negative events")**
+- **Action**: Use the `avg_tone` field. For positive events, use `ORDER BY c.avg_tone DESC`. For negative events, use `ORDER BY c.avg_tone ASC`.
+- **Example**: "Find the most positive events in Korea": `SELECT * FROM c WHERE c.action_geo_country_code = 'KOR' ORDER BY c.avg_tone DESC OFFSET 0 LIMIT 5`
 
 ### FINAL INSTRUCTION ###
 Return ONLY the raw, executable SQL query string.
