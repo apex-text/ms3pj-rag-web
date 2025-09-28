@@ -4,16 +4,17 @@ header[data-testid="stHeader"] { display: none !important; }
 .iframe-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; z-index: 1; }
 .iframe-container iframe { width: 100%; height: calc(100% + 36px); border: none; }
 
-/* --- Floating Chat Widget Styles (Scroll Fix v2) --- */
+/* --- Floating Chat Widget Styles (Final Fix) --- */
 
 /* 1. Main Expander Container */
+/* This container will now resize based on its content */
 div[data-testid="stExpander"] {
     position: fixed;
     bottom: 2rem;
     right: 2rem;
     width: 450px;
     max-width: 90vw;
-    height: 70vh; /* Use a fixed height for predictable scrolling */
+    max-height: 80vh; /* Set a maximum overall height */
     z-index: 1000;
     
     border: 1px solid #CCCCCC;
@@ -22,16 +23,15 @@ div[data-testid="stExpander"] {
 
     display: flex;
     flex-direction: column-reverse;
-    background-color: #FFFFFF; /* Ensure solid background */
+    background-color: #FFFFFF;
+    overflow: hidden; /* Crucial: clips children to the rounded corners */
 }
 
 /* 2. The <details> tag */
 div[data-testid="stExpander"] > details {
     display: flex;
     flex-direction: column-reverse;
-    height: 100%;
-    overflow: hidden; /* Contain children within the rounded corners */
-    border-radius: 10px;
+    width: 100%; 
 }
 
 /* 3. Expander Header (<summary>) */
@@ -49,18 +49,15 @@ div[data-testid="stExpander"] summary::-webkit-details-marker {
 }
 
 /* 4. Content Wrapper (stExpanderDetails) */
-/* This element will now act as a strict boundary for the scrolling container inside it */
 div[data-testid="stExpanderDetails"] {
     background-color: #FFFFFF;
-    flex-grow: 1;
-    overflow: hidden; /* This is crucial to contain the child */
 }
 
-/* 5. The ACTUAL Scrolling Container (the stVerticalBlock inside stExpanderDetails) */
-/* This is the key fix: We target the direct child and make IT scroll. */
+/* 5. The ACTUAL Scrolling Container */
+/* We give a fixed height ONLY to the part that needs to scroll */
 div[data-testid="stExpanderDetails"] > div[data-testid="stVerticalBlock"] {
-    overflow-y: auto; /* Apply scrolling here */
-    height: 100%; /* Fill the parent (stExpanderDetails) */
+    overflow-y: auto;
+    height: 60vh; /* Fixed height for the scrollable area */
     padding: 1rem;
 }
 
@@ -68,13 +65,11 @@ div[data-testid="stExpanderDetails"] > div[data-testid="stVerticalBlock"] {
 
 /* WHEN EXPANDED */
 div[data-testid="stExpander"] > details[open] > summary {
-    border-radius: 0 0 8px 8px;
-}
-div[data-testid="stExpander"] > details[open] > div[data-testid="stExpanderDetails"] {
-     border-radius: 8px 8px 0 0;
+    border-top: 1px solid #cccccc;
 }
 
 /* WHEN COLLAPSED */
+/* This is the key: hide the content, which makes the parent container shrink */
 div[data-testid="stExpander"] > details:not([open]) > div[data-testid="stExpanderDetails"] {
     display: none;
 }
