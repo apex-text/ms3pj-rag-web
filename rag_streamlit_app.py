@@ -132,11 +132,10 @@ load_css("assets/style.css")
 
 @st.cache_resource
 def display_powerbi_dashboard():
-    """Caches the Power BI iframe and renders it with components.html to prevent reloads."""
+    """Caches the Power BI iframe and renders it with st.markdown to prevent reloads."""
     POWERBI_URL = "https://app.powerbi.com/reportEmbed?reportId=60b4e583-90df-4d0a-8719-81f5a29eccd1&autoAuth=true&ctid=8f91900e-dfe5-480a-9a92-56239f989454"
     iframe_html = f'<div class="iframe-container"><iframe title="대시보드" src="{POWERBI_URL}" frameborder="0" allowFullScreen="true"></iframe></div>'
-    # Use components.html without a height, allowing CSS to control it.
-    components.html(iframe_html)
+    st.markdown(iframe_html, unsafe_allow_html=True)
 
 display_powerbi_dashboard()
 render_floating_chat()

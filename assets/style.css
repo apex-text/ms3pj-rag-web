@@ -4,27 +4,27 @@ header[data-testid="stHeader"] { display: none !important; }
 .iframe-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; z-index: 1; }
 .iframe-container iframe { width: 100%; height: calc(100% + 36px); border: none; }
 
-/* --- Floating Chat Widget Styles --- */
-/* 1. Main widget container */
+/* --- Floating Chat Widget Styles (Simplified & Robust) --- */
+
+/* 1. Main Expander Container */
 div[data-testid="stExpander"] {
+    /* Positioning and Sizing */
     position: fixed;
     bottom: 2rem;
     right: 2rem;
     width: 450px;
     max-width: 90vw;
-    max-height: 60vh;
+    max-height: 60vh; /* Max height for the entire widget */
     z-index: 1000;
-    
-    /* Set border and shadow, but NOT background here */
+
+    /* Appearance */
     border: 1px solid var(--gray-40);
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    
+
+    /* Flexbox Layout */
     display: flex;
     flex-direction: column;
-    
-    /* Set a default background for the whole component just in case */
-    background-color: var(--secondary-backgroundColor);
 }
 
 /* 2. Expander Header */
@@ -33,30 +33,23 @@ div[data-testid="stExpander"] > div[role="button"] {
     color: white;
     border-radius: 8px 8px 0 0;
     font-weight: bold;
-    flex-shrink: 0;
 }
 
-/* 3. The direct child that holds the content. THIS IS THE KEY. */
+/* 3. Content Area (directly inside the expander) */
 div[data-testid="stExpander"] > div:not([role="button"]) {
-    /* Apply the background and text color HERE */
+    /* This is the key: apply background and color here */
     background-color: var(--secondary-backgroundColor);
     color: var(--text-color);
     
+    /* Allow this area to grow and enable scrolling on its child */
     flex-grow: 1;
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    border-radius: 0 0 8px 8px; /* Match the parent's border radius */
+    border-radius: 0 0 10px 10px;
 }
 
-/* 4. The container holding the actual messages */
-div[data-testid="stContainer"] {
-    flex-grow: 1;
-    overflow-y: auto;
+/* 4. Message Container (the one that needs to scroll) */
+div[data-testid="stExpander"] div[data-testid="stContainer"] {
+    height: 100%; /* Fill the parent content area */
+    overflow-y: auto; /* Enable vertical scrolling */
     padding: 0.5rem;
-}
-
-/* 5. The container for the chat input at the bottom */
-div[data-testid="stChatInputContainer"] {
-    flex-shrink: 0;
 }
