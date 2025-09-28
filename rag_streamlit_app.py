@@ -117,72 +117,75 @@ def log_to_browser(message):
     components.html(f'<script>console.error(`{escaped_message}`)</script>', height=0)
 
 def render_floating_chat():
-    """Renders the floating chat widget using a styled st.expander."""
+    """Renders the floating chat widget with improved UI responsiveness."""
 
     with st.expander("🤖 GDELT Assistant", expanded=False):
-        message_container = st.container()
-        input_container = st.container()
-
+        
+        # Initialize chat history in session state if it doesn't exist
         if "messages" not in st.session_state:
             st.session_state.messages = [{"role": "assistant", "content": "Ask me anything! For example: 'How many events happened today?' or 'Tell me about climate change protests.'"}]
 
-        with message_container:
-            for message in st.session_state.messages:
-                with st.chat_message(message["role"]):
-                    st.markdown(message["content"])
+        # Display past messages from session state
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
 
-        with input_container:
-            if prompt := st.chat_input("Your question..."):
-                st.session_state.messages.append({"role": "user", "content": prompt})
-                logging.info(f"User question: {prompt}")
+        # Handle new user input
+        if prompt := st.chat_input("Your question..."):
+            # Add user message to session state and display it immediately
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
 
+            # Display assistant response placeholder and process the request
+            with st.chat_message("assistant"):
                 with st.spinner("Analyzing question and querying database..."):
                     try:
-                        # 1. Generate SQL query using the entire conversation history
+                        # 1. Generate SQL query using the conversation history
                         sql_query = generate_cosmos_sql(st.session_state.messages)
-                        
                         st.sidebar.subheader("Last Generated SQL Query")
                         st.sidebar.code(sql_query, language="sql")
 
+                        # 2. Generate vector embedding if needed
                         params = []
-                        # 2. Generate vector embedding if needed (based on the latest prompt)
                         if "VectorDistance" in sql_query:
                             logging.info("VectorDistance detected, generating query vector embedding...")
                             query_vector = oai_client.embeddings.create(input=[prompt], model=AZURE_OPENAI_EMBEDDING_DEPLOYMENT).data[0].embedding
                             params.append({"name": "@query_vector", "value": query_vector})
                             logging.info("Query vector generated.")
 
-                        # 3. Execute query
+                        # 3. Execute query against Cosmos DB
                         logging.info("Executing query against Cosmos DB...")
                         results = list(container.query_items(sql_query, parameters=params, enable_cross_partition_query=True))
                         logging.info(f"Query returned {len(results)} results.")
 
-                        # 4. Interpret results for a natural language answer using history
+                        # 4. Interpret results for a natural language answer
                         final_answer = interpret_results(st.session_state.messages, results)
 
                     except Exception as e:
                         # Log the full exception to the console
                         logging.exception("An error occurred during query processing.")
                         
-                        # Display a user-friendly message and detailed error in the UI
+                        # Prepare a user-friendly message and detailed error info
                         final_answer = "Sorry, I encountered an error while processing your request."
                         
-                        # Check if it's an OpenAI API error to show more specific details
                         if hasattr(e, 'body') and e.body:
                             error_details = e.body.get('message', json.dumps(e.body))
                         else:
                             tb_str = traceback.format_exc()
                             error_details = tb_str
                         
-                        # Log detailed error to browser console for debugging
+                        # Log detailed error to browser console and display in UI
                         log_to_browser(f"RAG App Error: {e}\n{error_details}")
-
                         st.error(f"An error occurred: {e}")
                         with st.expander("Click to see full error details"):
                             st.code(error_details)
-
-                st.session_state.messages.append({"role": "assistant", "content": final_answer})
-                # The st.rerun() call that was here has been removed.
+                    
+                    # Display the final answer
+                    st.markdown(final_answer)
+            
+            # Add the assistant's final answer to the session state
+            st.session_state.messages.append({"role": "assistant", "content": final_answer})
 
 # --- Main App Layout ---
 st.set_page_config(page_title="GDELT Dashboard", layout="wide", initial_sidebar_state="collapsed")
