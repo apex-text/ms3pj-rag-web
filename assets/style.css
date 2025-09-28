@@ -15,44 +15,48 @@ div[data-testid="stExpander"] {
     max-height: 60vh;
     z-index: 1000;
     
-    /* Apply background and text color to the ENTIRE widget */
-    background-color: var(--secondary-backgroundColor);
-    color: var(--text-color);
-    
+    /* Set border and shadow, but NOT background here */
     border: 1px solid var(--gray-40);
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     
-    /* Use flexbox to manage the inner layout */
     display: flex;
     flex-direction: column;
+    
+    /* Set a default background for the whole component just in case */
+    background-color: var(--secondary-backgroundColor);
 }
 
 /* 2. Expander Header */
 div[data-testid="stExpander"] > div[role="button"] {
     background-color: #007bff;
-    color: white; /* Keep header text white */
+    color: white;
     border-radius: 8px 8px 0 0;
     font-weight: bold;
-    flex-shrink: 0; /* Prevent header from shrinking */
+    flex-shrink: 0;
 }
 
-/* 3. The content area below the header */
+/* 3. The direct child that holds the content. THIS IS THE KEY. */
 div[data-testid="stExpander"] > div:not([role="button"]) {
-    flex-grow: 1; /* Allow content area to fill the available vertical space */
-    overflow: hidden; /* Crucial for enabling scrolling on a child element */
+    /* Apply the background and text color HERE */
+    background-color: var(--secondary-backgroundColor);
+    color: var(--text-color);
+    
+    flex-grow: 1;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
+    border-radius: 0 0 8px 8px; /* Match the parent's border radius */
 }
 
 /* 4. The container holding the actual messages */
 div[data-testid="stContainer"] {
-    flex-grow: 1; /* Allow the message list to fill the available space */
-    overflow-y: auto; /* Enable vertical scrolling */
+    flex-grow: 1;
+    overflow-y: auto;
     padding: 0.5rem;
 }
 
 /* 5. The container for the chat input at the bottom */
 div[data-testid="stChatInputContainer"] {
-    flex-shrink: 0; /* Prevent the input area from shrinking */
+    flex-shrink: 0;
 }

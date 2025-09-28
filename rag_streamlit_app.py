@@ -157,8 +157,11 @@ load_css("assets/style.css")
 
 @st.cache_resource
 def display_powerbi_dashboard():
+    """Caches the Power BI iframe to prevent it from reloading on every script rerun."""
     POWERBI_URL = "https://app.powerbi.com/reportEmbed?reportId=60b4e583-90df-4d0a-8719-81f5a29eccd1&autoAuth=true&ctid=8f91900e-dfe5-480a-9a92-56239f989454"
-    st.markdown(f'<div class="iframe-container"><iframe title="대시보드" src="{POWERBI_URL}" frameborder="0" allowFullScreen="true"></iframe></div>', unsafe_allow_html=True)
+    iframe_html = f'<div class="iframe-container"><iframe title="대시보드" src="{POWERBI_URL}" frameborder="0" allowFullScreen="true"></iframe></div>'
+    # Use components.html for more stable rendering of static HTML
+    components.html(iframe_html, height=0)
 
 display_powerbi_dashboard()
 render_floating_chat()
