@@ -4,7 +4,7 @@ header[data-testid="stHeader"] { display: none !important; }
 .iframe-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; z-index: 1; }
 .iframe-container iframe { width: 100%; height: calc(100% + 36px); border: none; }
 
-/* --- Floating Chat Widget Styles (Fixed for Bottom-Up Toggle) --- */
+/* --- Floating Chat Widget Styles (Corrected for Bottom-Up Toggle) --- */
 
 /* 1. Main Expander Container */
 div[data-testid="stExpander"] {
@@ -14,45 +14,62 @@ div[data-testid="stExpander"] {
     right: 2rem;
     width: 450px;
     max-width: 90vw;
-    height: 70vh;
+    /* Let height be determined by content, up to a max */
+    max-height: 70vh; 
     z-index: 1000;
 
     /* Appearance */
-    background-color: #FFFFFF; /* Hardcoded background for the parent */
+    background-color: #FFFFFF;
     border: 1px solid #CCCCCC;
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 
     /* Flexbox Layout - REVERSED for bottom-up toggle */
     display: flex;
-    flex-direction: column-reverse; /* This is the key change */
+    flex-direction: column-reverse;
 }
 
-/* 2. Expander Header (now at the bottom) */
-div[data-testid="stExpander"] > div[role="button"] {
+/* 2. Expander Header (the <summary> tag) */
+div[data-testid="stExpander"] > details > summary {
     background-color: #007bff;
     color: white;
-    /* Adjust border-radius for bottom position */
-    border-radius: 0 0 8px 8px;
+    border-radius: 8px; /* Default rounded corners */
     font-weight: bold;
-    flex-shrink: 0;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    list-style: none; /* Remove default triangle */
+}
+div[data-testid="stExpander"] > details > summary::-webkit-details-marker {
+    display: none; /* Hide marker for Chrome/Safari */
 }
 
-/* 3. Content Area (now at the top) */
-div[data-testid="stExpander"] > div:not([role="button"]) {
-    background-color: #FFFFFF; /* Hardcoded background */
+
+/* 3. Content Area (the <div> right after <summary>) */
+div[data-testid="stExpander"] > details > div {
+    background-color: #FFFFFF;
     color: #333333;
-    
-    /* Flex & Scroll Behavior */
-    flex-grow: 1;
     overflow-y: auto;
-    
-    /* Adjust border-radius for top position */
-    border-radius: 10px 10px 0 0;
+    padding: 1rem;
+    /* This will fill the available space due to flexbox */
+    height: 60vh; 
 }
 
-/* 4. Inner Message Container */
-div[data-testid="stExpander"] div[data-testid="stContainer"] {
-    background-color: #FFFFFF; /* Hardcoded background for the child */
-    padding: 1rem;
+/* --- State-Specific Styles --- */
+
+/* WHEN EXPANDED (details[open]) */
+div[data-testid="stExpander"] > details[open] > summary {
+    /* Header corners are sharp at the top when open */
+    border-radius: 0 0 8px 8px;
+}
+
+div[data-testid="stExpander"] > details[open] > div {
+    /* Content corners are sharp at the bottom when open */
+    border-radius: 8px 8px 0 0;
+    border-top: 1px solid #CCCCCC;
+}
+
+/* WHEN COLLAPSED (details:not([open])) */
+div[data-testid="stExpander"] > details:not([open]) > div {
+    /* Hide the content when collapsed */
+    display: none;
 }
