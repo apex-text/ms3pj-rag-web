@@ -198,8 +198,14 @@ load_css("assets/style.css")
 
 # 2. Display the Power BI dashboard in fullscreen
 st.sidebar.title("SQL Query")
-POWERBI_URL = "https://app.powerbi.com/reportEmbed?reportId=60b4e583-90df-4d0a-8719-81f5a29eccd1&autoAuth=true&ctid=8f91900e-dfe5-480a-9a92-56239f989454"
-st.markdown(f'<div class="iframe-container"><iframe title="대시보드" src="{POWERBI_URL}" frameborder="0" allowFullScreen="true"></iframe></div>', unsafe_allow_html=True)
+
+@st.cache_resource
+def display_powerbi_dashboard():
+    """Caches the Power BI iframe to prevent it from reloading on every script rerun."""
+    POWERBI_URL = "https://app.powerbi.com/reportEmbed?reportId=60b4e583-90df-4d0a-8719-81f5a29eccd1&autoAuth=true&ctid=8f91900e-dfe5-480a-9a92-56239f989454"
+    st.markdown(f'<div class="iframe-container"><iframe title="대시보드" src="{POWERBI_URL}" frameborder="0" allowFullScreen="true"></iframe></div>', unsafe_allow_html=True)
+
+display_powerbi_dashboard()
 
 # 3. Render the floating chat widget
 render_floating_chat()
