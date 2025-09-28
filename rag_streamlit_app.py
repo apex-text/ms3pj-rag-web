@@ -35,47 +35,33 @@ def get_clients():
 
 oai_client, container = get_clients()
 
+import prompts # Import the new prompts module
+
 # --- 2. Core "Text-to-SQL" Agent Logic ---
 
-def generate_cosmos_sql(user_question: str, container_schema: dict) -> str:
+def generate_cosmos_sql(user_question: str) -> str:
     """Uses an LLM to generate a Cosmos DB SQL query from a natural language question."""
     
     # Get today's date for context if the user asks for "today"
     today_date = datetime.now(timezone.utc).strftime('%Y-%m-%d')
     
-    system_prompt = f"""
-    You are an expert AI data analyst that translates natural language questions into valid Azure Cosmos DB for NoSQL queries.
-    Your goal is to generate a single, executable SQL query string and nothing else.
-
-    DATABASE SCHEMA:
-    - Container Name: c
-    - Available Columns: {json.dumps(container_schema, indent=2)}
-
-    QUERY GENERATION RULES:
-    1.  **Vector Search**: If the question is semantic or conceptual (e.g., "tell me about", "what are some events related to"), use the `VectorDistance` function on the `c.contentVector` field. The query should look like: `SELECT TOP 5 c.id, c.content, c.source_url FROM c ORDER BY VectorDistance(c.contentVector, @query_vector)`
-    2.  **Aggregate/Fact-based Queries**: If the question asks for a specific number, count, max, min, or average, generate a standard SQL query.
-        - For counts, use `SELECT VALUE COUNT(1) FROM c ...`
-        - For other aggregations, use `SELECT VALUE MAX(c.fieldName) FROM c ...`
-    3.  **Filtering**: Use standard `WHERE` clauses. For text fields, use `CONTAINS(c.fieldName, 'value')`. For dates, use string comparison (e.g., `c.event_date = '{today_date}'`).
-    4.  **Hybrid Queries**: If the question combines semantic search with filters, create a query that includes both a `WHERE` clause and an `ORDER BY VectorDistance(...)`.
-    5.  **Response Format**: ALWAYS return ONLY the raw SQL query string. Do not add any explanations, markdown, or other text. If you cannot generate a query, return "SELECT 'Query generation failed: The question is too complex or ambiguous.'"
-
-    Today's date is {today_date}.
-    """
+    # Get the master system prompt from the prompts module
+    system_prompt = prompts.get_system_prompt().format(today_date=today_date)
     
     response = oai_client.chat.completions.create(
         model=AZURE_OPENAI_CHAT_DEPLOYMENT,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_question}
-        ]
+        ],
+        temperature=0.0 # Set temperature to 0 for deterministic query generation
     )
     
     sql_query = response.choices[0].message.content.strip()
     
     # A simple validation to ensure it's a SELECT query
     if not sql_query.upper().startswith("SELECT"):
-        raise ValueError("LLM did not generate a valid SELECT query.")
+        raise ValueError(f"LLM did not generate a valid SELECT query. Instead, it returned: {sql_query}")
         
     return sql_query
 
