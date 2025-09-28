@@ -79,7 +79,7 @@ def render_floating_chat():
         
         # Initialize chat history
         if "messages" not in st.session_state:
-            st.session_state.messages = [{"role": "assistant", "content": "무엇이든 물어보세요! 예: '오늘 발생한 이벤트는 몇 개인가요?'"}]
+            st.session_state.messages = [{"role": "assistant", "content": "실시간 뉴스를 물어보세요! 예: '오늘 발생한 이벤트는 몇 개인가요?', '기후 관련 최신 뉴스 알려줘'"}]
 
         # Display chat messages from history
         message_container = st.container()
