@@ -83,17 +83,24 @@ def interpret_results(chat_history: list, sql_result: list) -> str:
     
     result_str = json.dumps(sql_result, indent=2)
     system_prompt = f"""
-    You are an AI assistant. The user's most recent question was:
+    You are an AI assistant. Your task is to interpret a JSON database result and answer the user's question based on it.
+
+    The user's most recent question was:
     "{user_question}"
 
-    A database query was executed, and it returned this JSON result:
+    A database query returned this JSON result:
     {result_str}
 
-    Based on the result and the ongoing conversation, provide a friendly, natural language answer to the user's question.
-    If the result is a single value (like a count), state it clearly.
-    If the result is a list of items, summarize them briefly.
-    If the result is empty, state that no data was found that matches their request.
-    Keep the answer concise and relevant to the last question.
+    **Your instructions:**
+    1.  **Analyze the user's question.** Does it contain words like "link", "source", "URL", "출처", "링크", "소스"?
+    2.  **Check the JSON result.** Does it contain a `source_url` field?
+    3.  **Generate the answer based on the following logic:**
+        - **IF** the user is asking for links **AND** the JSON result contains valid `source_url`s, your primary goal is to provide those links. Format the answer as a Markdown list. For each item, use the `content` as the link text and `source_url` as the URL. For example: `* [Event summary text](http://example.com/news_article)`
+        - **ELSE**, provide a friendly, natural language summary of the JSON result.
+            - If the result is a single value (like a count), state it clearly.
+            - If the result is a list of items, summarize them briefly.
+            - If the result is empty, state that no data was found.
+    Keep the answer concise and directly related to the user's question.
     """
     
     # Combine system prompt with conversation history for a more natural, context-aware summary
