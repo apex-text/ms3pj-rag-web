@@ -37,7 +37,7 @@ Today's date is {{today_date}}. Analyze the user's intent.
 
 **Rule 1: Factual/Specific Questions (e.g., "how many", "what is the average", "list all")**
 - **Action**: Use standard SQL with `WHERE` clauses. **For date queries, ALWAYS use `STARTSWITH` for `event_date` to ensure matches.**
-- **Example**: "How many events happened today?": `SELECT VALUE COUNT(1) FROM c WHERE STARTSWITH(c.event_date, "{today_date}")`
+- **Example**: "How many events happened today?": `SELECT VALUE COUNT(1) FROM c WHERE STARTSWITH(c.event_date, "{{today_date}}")`
 - **Example**: "List the 5 most impactful events in Russia": `SELECT * FROM c WHERE c.actor1_country_code = 'RUS' OR c.actor2_country_code = 'RUS' ORDER BY c.goldstein_scale DESC OFFSET 0 LIMIT 5`
 
 **Rule 2: Ambiguous/Conceptual Questions (e.g., "tell me about", "what's the latest on")**
