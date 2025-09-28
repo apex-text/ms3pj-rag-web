@@ -4,36 +4,37 @@ header[data-testid="stHeader"] { display: none !important; }
 .iframe-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; z-index: 1; }
 .iframe-container iframe { width: 100%; height: calc(100% + 36px); border: none; }
 
-/* --- Floating Chat Widget Styles (Final Scroll Fix) --- */
+/* --- Floating Chat Widget Styles (Final Fix) --- */
 
-/* 1. Main Expander Container: Auto-resizes */
+/* 1. Main Expander Container */
+/* This container will now resize based on its content */
 div[data-testid="stExpander"] {
     position: fixed;
     bottom: 2rem;
     right: 2rem;
     width: 450px;
     max-width: 90vw;
-    max-height: 80vh;
+    max-height: 80vh; /* Set a maximum overall height */
     z-index: 1000;
     
     border: 1px solid #CCCCCC;
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    
+
     display: flex;
     flex-direction: column-reverse;
     background-color: #FFFFFF;
-    overflow: hidden;
+    overflow: hidden; /* Crucial: clips children to the rounded corners */
 }
 
-/* 2. <details> tag: Manages layout */
+/* 2. The <details> tag */
 div[data-testid="stExpander"] > details {
     display: flex;
     flex-direction: column-reverse;
     width: 100%; 
 }
 
-/* 3. Header <summary> */
+/* 3. Expander Header (<summary>) */
 div[data-testid="stExpander"] summary {
     background-color: #007bff;
     color: white;
@@ -41,37 +42,34 @@ div[data-testid="stExpander"] summary {
     padding: 0.75rem 1rem;
     cursor: pointer;
     list-style: none;
+    flex-shrink: 0;
 }
-div[data-testid="stExpander"] summary::-webkit-details-marker { display: none; }
+div[data-testid="stExpander"] summary::-webkit-details-marker {
+    display: none;
+}
 
 /* 4. Content Wrapper (stExpanderDetails) */
-/* This now has a fixed height and uses flexbox to manage its children */
 div[data-testid="stExpanderDetails"] {
     background-color: #FFFFFF;
-    display: flex;
-    flex-direction: column;
-    height: 70vh; /* Give a fixed height to the entire content area */
-    overflow: hidden;
 }
 
-/* 5. THE REAL SCROLL CONTAINER */
-/* This is the key: Target the specific div that holds the messages */
-div[data-test-scroll-behavior="normal"] {
-    overflow-y: auto !important; /* Apply scrolling here */
-    flex-grow: 1; /* Make it fill the available space */
+/* 5. The ACTUAL Scrolling Container */
+/* We give a fixed height ONLY to the part that needs to scroll */
+div[data-testid="stExpanderDetails"] > div[data-testid="stVerticalBlock"] {
+    overflow-y: auto;
+    height: 60vh; /* Fixed height for the scrollable area */
     padding: 1rem;
 }
 
-/* 6. Chat Input Area */
-.stChatInput {
-    padding: 0 1rem 1rem 1rem;
-    flex-shrink: 0; /* Prevent the input from shrinking */
-}
-
 /* --- State-Specific Styles --- */
+
+/* WHEN EXPANDED */
 div[data-testid="stExpander"] > details[open] > summary {
     border-top: 1px solid #cccccc;
 }
+
+/* WHEN COLLAPSED */
+/* This is the key: hide the content, which makes the parent container shrink */
 div[data-testid="stExpander"] > details:not([open]) > div[data-testid="stExpanderDetails"] {
     display: none;
 }
