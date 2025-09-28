@@ -252,9 +252,9 @@ st.markdown("""
 
 # 2. Display the Power BI dashboard in fullscreen
 st.sidebar.title("SQL Query")
-POWERBI_URL = "https://app.powerbi.com/view?r=eyJrIjoiNDJlN2RmMDAtZDg5Ni00MjA3LThiZjMtMDQyZGQ1NDU3Njg2IiwidCI6IjhmOTE5MDBlLWRmZTUtNDgwYS05YTkyLTU2MjM5Zjk4OTQ1NCJ9"
+POWERBI_URL = "https://app.powerbi.com/reportEmbed?reportId=60b4e583-90df-4d0a-8719-81f5a29eccd1&autoAuth=true&ctid=8f91900e-dfe5-480a-9a92-56239f989454"
 # Use a container to clip the oversized iframe, effectively hiding the bottom logo bar
-st.markdown(f'<div class="iframe-container"><iframe src="{POWERBI_URL}"></iframe></div>', unsafe_allow_html=True)
+st.markdown(f'<div class="iframe-container"><iframe title="대시보드" src="{POWERBI_URL}" frameborder="0" allowFullScreen="true"></iframe></div>', unsafe_allow_html=True)
 
 
 # IMPORTANT: Replace these URLs with the public or embeddable URLs of your dashboards
