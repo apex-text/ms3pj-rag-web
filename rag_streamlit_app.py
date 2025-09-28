@@ -117,75 +117,69 @@ def log_to_browser(message):
     components.html(f'<script>console.error(`{escaped_message}`)</script>', height=0)
 
 def render_floating_chat():
-    """Renders the floating chat widget with improved UI responsiveness."""
+    """Renders the floating chat widget with a fixed input bar."""
 
-    with st.expander("🤖 GDELT Assistant", expanded=False):
+    with st.expander("🤖 GDELT Assistant", expanded=True):
         
-        # Initialize chat history in session state if it doesn't exist
-        if "messages" not in st.session_state:
-            st.session_state.messages = [{"role": "assistant", "content": "Ask me anything! For example: 'How many events happened today?' or 'Tell me about climate change protests.'"}]
+        # Create a container for the chat history that will be scrollable
+        message_container = st.container()
 
-        # Display past messages from session state
-        for message in st.session_state.messages:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
+        with message_container:
+            # Initialize and display chat history
+            if "messages" not in st.session_state:
+                st.session_state.messages = [{"role": "assistant", "content": "Ask me anything! For example: 'How many events happened today?' or 'Tell me about climate change protests.'"}]
+            for message in st.session_state.messages:
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
 
-        # Handle new user input
+        # Handle new user input (this will be rendered below the scrollable container)
         if prompt := st.chat_input("Your question..."):
-            # Add user message to session state and display it immediately
+            # Add user message to state
             st.session_state.messages.append({"role": "user", "content": prompt})
-            with st.chat_message("user"):
-                st.markdown(prompt)
-
-            # Display assistant response placeholder and process the request
-            with st.chat_message("assistant"):
-                with st.spinner("Analyzing question and querying database..."):
-                    try:
-                        # 1. Generate SQL query using the conversation history
-                        sql_query = generate_cosmos_sql(st.session_state.messages)
-                        st.sidebar.subheader("Last Generated SQL Query")
-                        st.sidebar.code(sql_query, language="sql")
-
-                        # 2. Generate vector embedding if needed
-                        params = []
-                        if "VectorDistance" in sql_query:
-                            logging.info("VectorDistance detected, generating query vector embedding...")
-                            query_vector = oai_client.embeddings.create(input=[prompt], model=AZURE_OPENAI_EMBEDDING_DEPLOYMENT).data[0].embedding
-                            params.append({"name": "@query_vector", "value": query_vector})
-                            logging.info("Query vector generated.")
-
-                        # 3. Execute query against Cosmos DB
-                        logging.info("Executing query against Cosmos DB...")
-                        results = list(container.query_items(sql_query, parameters=params, enable_cross_partition_query=True))
-                        logging.info(f"Query returned {len(results)} results.")
-
-                        # 4. Interpret results for a natural language answer
-                        final_answer = interpret_results(st.session_state.messages, results)
-
-                    except Exception as e:
-                        # Log the full exception to the console
-                        logging.exception("An error occurred during query processing.")
-                        
-                        # Prepare a user-friendly message and detailed error info
-                        final_answer = "Sorry, I encountered an error while processing your request."
-                        
-                        if hasattr(e, 'body') and e.body:
-                            error_details = e.body.get('message', json.dumps(e.body))
-                        else:
-                            tb_str = traceback.format_exc()
-                            error_details = tb_str
-                        
-                        # Log detailed error to browser console and display in UI
-                        log_to_browser(f"RAG App Error: {e}\n{error_details}")
-                        st.error(f"An error occurred: {e}")
-                        with st.expander("Click to see full error details"):
-                            st.code(error_details)
-                    
-                    # Display the final answer
-                    st.markdown(final_answer)
             
-            # Add the assistant's final answer to the session state
+            # Process and get assistant response
+            try:
+                with st.spinner("Analyzing question and querying database..."):
+                    # 1. Generate SQL query
+                    sql_query = generate_cosmos_sql(st.session_state.messages)
+                    st.sidebar.subheader("Last Generated SQL Query")
+                    st.sidebar.code(sql_query, language="sql")
+
+                    # 2. Generate vector embedding if needed
+                    params = []
+                    if "VectorDistance" in sql_query:
+                        logging.info("VectorDistance detected, generating query vector embedding...")
+                        query_vector = oai_client.embeddings.create(input=[prompt], model=AZURE_OPENAI_EMBEDDING_DEPLOYMENT).data[0].embedding
+                        params.append({"name": "@query_vector", "value": query_vector})
+                        logging.info("Query vector generated.")
+
+                    # 3. Execute query
+                    logging.info("Executing query against Cosmos DB...")
+                    results = list(container.query_items(sql_query, parameters=params, enable_cross_partition_query=True))
+                    logging.info(f"Query returned {len(results)} results.")
+
+                    # 4. Interpret results
+                    final_answer = interpret_results(st.session_state.messages, results)
+
+            except Exception as e:
+                logging.exception("An error occurred during query processing.")
+                final_answer = "Sorry, I encountered an error while processing your request."
+                
+                if hasattr(e, 'body') and e.body:
+                    error_details = e.body.get('message', json.dumps(e.body))
+                else:
+                    tb_str = traceback.format_exc()
+                    error_details = tb_str
+                
+                log_to_browser(f"RAG App Error: {e}\n{error_details}")
+                # Display error in the main UI as well, but no need for a separate st.error here
+                # as the final_answer will be displayed in the chat.
+
+            # Add assistant response to state
             st.session_state.messages.append({"role": "assistant", "content": final_answer})
+            
+            # Rerun to display the new user and assistant messages in the container
+            st.rerun()
 
 # --- Main App Layout ---
 st.set_page_config(page_title="GDELT Dashboard", layout="wide", initial_sidebar_state="collapsed")
@@ -200,41 +194,37 @@ st.markdown("""
     header[data-testid="stHeader"] {
         display: none !important;
     }
-
-    /* Create a container that fills the viewport and hides overflow */
     .iframe-container {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        overflow: hidden; /* This is the key to hiding the bottom part */
+        overflow: hidden;
         z-index: 1;
     }
-
-    /* Style the iframe to be taller than the container, pushing the bottom out of view */
     .iframe-container iframe {
         width: 100%;
-        height: calc(100% + 36px); /* Make it 36px taller */
+        height: calc(100% + 36px);
         border: none;
     }
 
     /* --- Floating Chat Widget Styles (z-index: 1000) --- */
-    /* Main container for the floating expander */
     div[data-testid="stExpander"] {
         position: fixed;
         bottom: 2rem;
         right: 2rem;
         width: 450px;
         max-width: 90vw;
+        max-height: 80vh; /* Set a max-height for the entire expander */
         z-index: 1000;
         background-color: #FFFFFF;
         border: 1px solid #CCCCCC;
         border-radius: 10px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        display: flex; /* Use flexbox for better layout control */
+        flex-direction: column; /* Stack children vertically */
     }
-
-    /* Expander header styling */
     div[data-testid="stExpander"] > div[role="button"] {
         background-color: #007bff;
         color: white;
@@ -242,23 +232,11 @@ st.markdown("""
         font-weight: bold;
     }
 
-    /* The direct content area of the expander */
-    div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] > div:nth-of-type(1) {
-        max-height: 65vh; /* Set a MAX height for the content area */
-        display: flex;
-        overflow-y: auto;  /* Make this container scrollable */
-        flex-direction: column;
-    }
-
-    /* Target the st.container() holding the messages (first child) */
-    div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] > div:nth-of-type(1) > div:nth-of-type(1) {
-        flex-grow: 1;      /* Allow the message container to grow */
-        padding-right: 10px; /* Add some padding for the scrollbar */
-    }
-
-    /* Target the st.container() for the chat input (second child) */
-    div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] > div:nth-of-type(1) > div:nth-of-type(2) {
-        flex-shrink: 0; /* Prevent the input container from shrinking */
+    /* Target the container wrapping the messages to make it scrollable */
+    div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] div[data-testid="stContainer"]:nth-of-type(1) {
+        height: 45vh; /* Fixed height for the message area */
+        overflow-y: auto; /* Make it scrollable */
+        padding-right: 10px; /* Space for scrollbar */
     }
 </style>
 """, unsafe_allow_html=True)
@@ -266,13 +244,7 @@ st.markdown("""
 # 2. Display the Power BI dashboard in fullscreen
 st.sidebar.title("SQL Query")
 POWERBI_URL = "https://app.powerbi.com/reportEmbed?reportId=60b4e583-90df-4d0a-8719-81f5a29eccd1&autoAuth=true&ctid=8f91900e-dfe5-480a-9a92-56239f989454"
-# Use a container to clip the oversized iframe, effectively hiding the bottom logo bar
 st.markdown(f'<div class="iframe-container"><iframe title="대시보드" src="{POWERBI_URL}" frameborder="0" allowFullScreen="true"></iframe></div>', unsafe_allow_html=True)
-
-
-# IMPORTANT: Replace these URLs with the public or embeddable URLs of your dashboards
- # Placeholder URL
-
 
 # 3. Render the floating chat widget
 render_floating_chat()
