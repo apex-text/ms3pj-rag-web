@@ -119,7 +119,7 @@ def log_to_browser(message):
 def render_floating_chat():
     """Renders the floating chat widget with a fixed input bar."""
 
-    with st.expander("🤖 GDELT Assistant", expanded=True):
+    with st.expander("🤖 GDELT 어시스턴트", expanded=True):
         
         # Create a container for the chat history that will be scrollable
         message_container = st.container()
@@ -127,7 +127,7 @@ def render_floating_chat():
         with message_container:
             # Initialize and display chat history
             if "messages" not in st.session_state:
-                st.session_state.messages = [{"role": "assistant", "content": "Ask me anything! For example: 'How many events happened today?' or 'Tell me about climate change protests.'"}]
+                st.session_state.messages = [{"role": "assistant", "content": "무엇이든 물어보세요! 예: '오늘 발생한 이벤트는 몇 개인가요?' 또는 '기후 변화 시위에 대해 알려주세요.'"}]
             for message in st.session_state.messages:
                 with st.chat_message(message["role"]):
                     st.markdown(message["content"])
