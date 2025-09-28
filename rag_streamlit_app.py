@@ -6,8 +6,19 @@ from openai import AzureOpenAI
 from azure.cosmos import CosmosClient
 import pandas as pd
 from datetime import datetime, timezone
+import logging
+import traceback
+import prompts # Import the new prompts module
+
+# --- 0. Logging Configuration ---
+# Logs will be written to stdout, which Azure Web App captures in Log Stream.
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+)
 
 # --- 1. Configuration and Initialization ---
+logging.info("Streamlit app starting up...")
 
 # Load credentials from environment variables
 try:
@@ -20,143 +31,137 @@ try:
     COSMOS_DB_KEY = os.environ["COSMOS_DB_KEY"]
     COSMOS_DB_DATABASE_NAME = os.environ["COSMOS_DB_DATABASE_NAME"]
     COSMOS_DB_COLLECTION_NAME = os.environ["COSMOS_DB_COLLECTION_NAME"]
+    logging.info("Successfully loaded all environment variables.")
 except KeyError as e:
+    logging.critical(f"FATAL ERROR: Environment variable {e} is not set.")
     st.error(f"FATAL ERROR: Environment variable {e} is not set.")
     st.stop()
 
 # Initialize clients
 @st.cache_resource
 def get_clients():
+    logging.info("Initializing OpenAI and Cosmos DB clients...")
     oai_client = AzureOpenAI(api_key=AZURE_OPENAI_KEY, api_version="2024-02-01", azure_endpoint=AZURE_OPENAI_ENDPOINT)
     cosmos_client = CosmosClient(COSMOS_DB_ENDPOINT, credential=COSMOS_DB_KEY)
     database = cosmos_client.get_database_client(COSMOS_DB_DATABASE_NAME)
     container = database.get_container_client(COSMOS_DB_COLLECTION_NAME)
+    logging.info("Clients initialized and cached.")
     return oai_client, container
 
 oai_client, container = get_clients()
 
-import prompts # Import the new prompts module
-
-# --- 2. Core "Text-to-SQL" Agent Logic ---
-
-def generate_cosmos_sql(user_question: str) -> str:
-    """Uses an LLM to generate a Cosmos DB SQL query from a natural language question."""
+def generate_cosmos_sql(chat_history: list) -> str:
+    """Uses an LLM to generate a Cosmos DB SQL query from a natural language question, using conversation history for context."""
     
-    # Get today's date for context if the user asks for "today"
     today_date = datetime.now(timezone.utc).strftime('%Y-%m-%d')
-    
-    # Get the master system prompt from the prompts module
     system_prompt = prompts.get_system_prompt().format(today_date=today_date)
     
+    # Combine the system prompt with the last 10 messages from the chat history
+    messages_for_api = [{"role": "system", "content": system_prompt}] + chat_history[-10:]
+    
+    logging.info(f"Generating SQL query with OpenAI using the last {len(chat_history[-10:])} messages for context.")
     response = oai_client.chat.completions.create(
         model=AZURE_OPENAI_CHAT_DEPLOYMENT,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_question}
-        ],
-        temperature=0.0 # Set temperature to 0 for deterministic query generation
+        messages=messages_for_api,
+        temperature=0.0
     )
     
     sql_query = response.choices[0].message.content.strip()
+    logging.info(f"Generated SQL query: {sql_query}")
     
-    # A simple validation to ensure it's a SELECT query
     if not sql_query.upper().startswith("SELECT"):
-        raise ValueError(f"LLM did not generate a valid SELECT query. Instead, it returned: {sql_query}")
+        error_message = f"LLM did not generate a valid SELECT query. Instead, it returned: {sql_query}"
+        logging.error(error_message)
+        raise ValueError(error_message)
         
     return sql_query
 
-def interpret_results(user_question: str, sql_result: list) -> str:
-    """Uses an LLM to convert a raw SQL result into a natural language answer."""
+def interpret_results(chat_history: list, sql_result: list) -> str:
+    """Uses an LLM to convert a raw SQL result into a natural language answer, using conversation history for context."""
+    
+    # The user's last question is the last message in the history
+    user_question = chat_history[-1]["content"] if chat_history else "the user's question"
     
     result_str = json.dumps(sql_result, indent=2)
     system_prompt = f"""
-    You are an AI assistant. The user asked the following question:
+    You are an AI assistant. The user's most recent question was:
     "{user_question}"
 
     A database query was executed, and it returned this JSON result:
     {result_str}
 
-    Your task is to interpret this result and provide a friendly, natural language answer to the user's original question.
-    If the result is a single value (like a count or an average), state it clearly.
+    Based on the result and the ongoing conversation, provide a friendly, natural language answer to the user's question.
+    If the result is a single value (like a count), state it clearly.
     If the result is a list of items, summarize them briefly.
-    If the result is empty, state that no data was found.
+    If the result is empty, state that no data was found that matches their request.
+    Keep the answer concise and relevant to the last question.
     """
     
+    # Combine system prompt with conversation history for a more natural, context-aware summary
+    messages_for_api = [{"role": "system", "content": system_prompt}] + chat_history[-10:]
+
+    logging.info("Interpreting SQL results with OpenAI...")
     response = oai_client.chat.completions.create(
         model=AZURE_OPENAI_CHAT_DEPLOYMENT,
-        messages=[{"role": "system", "content": system_prompt}]
+        messages=messages_for_api
     )
-    return response.choices[0].message.content
+    final_answer = response.choices[0].message.content
+    logging.info("Successfully interpreted results.")
+    return final_answer
 
 # --- 3. Streamlit User Interface ---
 
 def render_floating_chat():
     """Renders the floating chat widget using a styled st.expander."""
 
-    # Define the schema for the LLM inside the function or pass it as an argument
-    container_schema = {
-        "id": "string (unique identifier)",
-        "event_date": "string (YYYY-MM-DD)",
-        "actor1_name": "string",
-        "actor2_name": "string",
-        "avg_tone": "number",
-        "goldstein_scale": "number",
-        "num_articles": "number",
-        "themes": "string (semicolon-separated)",
-        "locations": "string (semicolon-separated)",
-        "persons": "string (semicolon-separated)",
-        "organizations": "string (semicolon-separated)",
-        "content": "string (summary for vector search)",
-        "contentVector": "array of numbers (for semantic search)"
-    }
-
     with st.expander("🤖 GDELT Assistant", expanded=False):
-        # This container holds the scrollable chat history
         message_container = st.container()
-
-        # This container holds the input box
         input_container = st.container()
 
-        # Initialize or get chat history
         if "messages" not in st.session_state:
             st.session_state.messages = [{"role": "assistant", "content": "Ask me anything! For example: 'How many events happened today?' or 'Tell me about climate change protests.'"}]
 
-        # Display chat history in the message container
         with message_container:
             for message in st.session_state.messages:
                 with st.chat_message(message["role"]):
                     st.markdown(message["content"])
 
-        # Handle new user input in the input container
         with input_container:
             if prompt := st.chat_input("Your question..."):
                 st.session_state.messages.append({"role": "user", "content": prompt})
+                logging.info(f"User question: {prompt}")
 
                 with st.spinner("Analyzing question and querying database..."):
                     try:
-                        # 1. Generate SQL query
-                        sql_query = generate_cosmos_sql(prompt)
+                        # 1. Generate SQL query using the entire conversation history
+                        sql_query = generate_cosmos_sql(st.session_state.messages)
                         
-                        # Display generated query in the main sidebar for debugging
                         st.sidebar.subheader("Last Generated SQL Query")
                         st.sidebar.code(sql_query, language="sql")
 
                         params = []
-                        # 2. Generate vector embedding if needed
+                        # 2. Generate vector embedding if needed (based on the latest prompt)
                         if "VectorDistance" in sql_query:
+                            logging.info("VectorDistance detected, generating query vector embedding...")
                             query_vector = oai_client.embeddings.create(input=[prompt], model=AZURE_OPENAI_EMBEDDING_DEPLOYMENT).data[0].embedding
                             params.append({"name": "@query_vector", "value": query_vector})
+                            logging.info("Query vector generated.")
 
                         # 3. Execute query
+                        logging.info("Executing query against Cosmos DB...")
                         results = list(container.query_items(sql_query, parameters=params, enable_cross_partition_query=True))
+                        logging.info(f"Query returned {len(results)} results.")
 
-                        # 4. Interpret results for a natural language answer
-                        final_answer = interpret_results(prompt, results)
+                        # 4. Interpret results for a natural language answer using history
+                        final_answer = interpret_results(st.session_state.messages, results)
 
                     except Exception as e:
-                        import traceback
-                        tb_str = traceback.format_exc()
+                        # Log the full exception to the console
+                        logging.exception("An error occurred during query processing.")
+                        
+                        # Display a user-friendly message and detailed error in the UI
                         final_answer = "Sorry, I encountered an error while processing your request."
+                        tb_str = traceback.format_exc()
                         st.error(f"An error occurred: {e}")
                         with st.expander("Click to see full error details"):
                             st.code(tb_str)
