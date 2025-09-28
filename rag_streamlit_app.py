@@ -124,69 +124,66 @@ def log_to_browser(message):
     components.html(f'<script>console.error(`{escaped_message}`)</script>', height=0)
 
 def render_floating_chat():
-    """Renders the floating chat widget with a fixed input bar."""
+    """Renders the floating chat widget with a responsive, streaming-like UI."""
 
     with st.expander("🤖 GDELT 어시스턴트", expanded=True):
         
         # Create a container for the chat history that will be scrollable
         message_container = st.container()
-
         with message_container:
-            # Initialize and display chat history
             if "messages" not in st.session_state:
                 st.session_state.messages = [{"role": "assistant", "content": "무엇이든 물어보세요! 예: '오늘 발생한 이벤트는 몇 개인가요?' 또는 '기후 변화 시위에 대해 알려주세요.'"}]
+            
+            # Display the entire chat history from session state
             for message in st.session_state.messages:
                 with st.chat_message(message["role"]):
                     st.markdown(message["content"])
 
-        # Handle new user input (this will be rendered below the scrollable container)
+        # Handle new user input
         if prompt := st.chat_input("Your question..."):
-            # Add user message to state
+            # Add user message to session state and immediately display it
             st.session_state.messages.append({"role": "user", "content": prompt})
+            with message_container:
+                with st.chat_message("user"):
+                    st.markdown(prompt)
+
+            # Display a spinner in the assistant's placeholder while processing
+            with message_container:
+                with st.chat_message("assistant"):
+                    with st.spinner("답변을 생성하는 중..."):
+                        try:
+                            # 1. Generate SQL query
+                            sql_query = generate_cosmos_sql(st.session_state.messages)
+                            st.sidebar.subheader("Last Generated SQL Query")
+                            st.sidebar.code(sql_query, language="sql")
+
+                            # 2. Generate vector embedding if needed
+                            params = []
+                            if "VectorDistance" in sql_query:
+                                logging.info("VectorDistance detected, generating query vector embedding...")
+                                query_vector = oai_client.embeddings.create(input=[prompt], model=AZURE_OPENAI_EMBEDDING_DEPLOYMENT).data[0].embedding
+                                params.append({"name": "@query_vector", "value": query_vector})
+
+                            # 3. Execute query
+                            logging.info("Executing query against Cosmos DB...")
+                            results = list(container.query_items(sql_query, parameters=params, enable_cross_partition_query=True))
+                            logging.info(f"Query returned {len(results)} results.")
+
+                            # 4. Interpret results
+                            final_answer = interpret_results(st.session_state.messages, results)
+
+                        except Exception as e:
+                            logging.exception("An error occurred during query processing.")
+                            final_answer = "죄송합니다, 요청을 처리하는 중에 오류가 발생했습니다."
+                            # Optionally log detailed error to browser console for debugging
+                            tb_str = traceback.format_exc()
+                            log_to_browser(f"RAG App Error: {e}\n{tb_str}")
+
+                        # Replace spinner with the final answer
+                        st.markdown(final_answer)
             
-            # Process and get assistant response
-            try:
-                with st.spinner("Analyzing question and querying database..."):
-                    # 1. Generate SQL query
-                    sql_query = generate_cosmos_sql(st.session_state.messages)
-                    st.sidebar.subheader("Last Generated SQL Query")
-                    st.sidebar.code(sql_query, language="sql")
-
-                    # 2. Generate vector embedding if needed
-                    params = []
-                    if "VectorDistance" in sql_query:
-                        logging.info("VectorDistance detected, generating query vector embedding...")
-                        query_vector = oai_client.embeddings.create(input=[prompt], model=AZURE_OPENAI_EMBEDDING_DEPLOYMENT).data[0].embedding
-                        params.append({"name": "@query_vector", "value": query_vector})
-                        logging.info("Query vector generated.")
-
-                    # 3. Execute query
-                    logging.info("Executing query against Cosmos DB...")
-                    results = list(container.query_items(sql_query, parameters=params, enable_cross_partition_query=True))
-                    logging.info(f"Query returned {len(results)} results.")
-
-                    # 4. Interpret results
-                    final_answer = interpret_results(st.session_state.messages, results)
-
-            except Exception as e:
-                logging.exception("An error occurred during query processing.")
-                final_answer = "Sorry, I encountered an error while processing your request."
-                
-                if hasattr(e, 'body') and e.body:
-                    error_details = e.body.get('message', json.dumps(e.body))
-                else:
-                    tb_str = traceback.format_exc()
-                    error_details = tb_str
-                
-                log_to_browser(f"RAG App Error: {e}\n{error_details}")
-                # Display error in the main UI as well, but no need for a separate st.error here
-                # as the final_answer will be displayed in the chat.
-
-            # Add assistant response to state
+            # Add assistant's response to the session state
             st.session_state.messages.append({"role": "assistant", "content": final_answer})
-            
-            # The script will now automatically rerun from the chat_input interaction,
-            # displaying the new messages without a forced rerun.
 
 # --- Main App Layout ---
 st.set_page_config(page_title="GDELT Dashboard", layout="wide", initial_sidebar_state="collapsed")
