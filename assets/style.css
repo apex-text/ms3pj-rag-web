@@ -27,25 +27,40 @@ div[data-testid="stExpander"] {
     right: 2rem;
     width: 450px;
     max-width: 90vw;
-    max-height: 80vh; /* Set a max-height for the entire expander */
+    max-height: 80vh; /* Max height for the whole widget */
     z-index: 1000;
     background-color: #FFFFFF;
     border: 1px solid #CCCCCC;
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    display: flex; /* Use flexbox for better layout control */
-    flex-direction: column; /* Stack children vertically */
+    display: flex; /* Use flexbox for layout */
+    flex-direction: column; /* Stack header and content vertically */
 }
+
 div[data-testid="stExpander"] > div[role="button"] {
     background-color: #007bff;
     color: white;
     border-radius: 8px 8px 0 0;
     font-weight: bold;
+    flex-shrink: 0; /* Prevent header from shrinking */
+}
+
+/* This is the main content area inside the expander */
+div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Prevent content from spilling out */
+    flex-grow: 1; /* Allow content area to fill available vertical space */
 }
 
 /* Target the container wrapping the messages to make it scrollable */
 div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] div[data-testid="stContainer"]:nth-of-type(1) {
-    height: 45vh; /* Fixed height for the message area */
+    flex-grow: 1; /* Allow message container to take up available space */
     overflow-y: auto; /* Make it scrollable */
-    padding-right: 10px; /* Space for scrollbar */
+    padding: 0.5rem;
+}
+
+/* Target the chat input container at the bottom */
+div[data-testid="stChatInputContainer"] {
+    flex-shrink: 0; /* Prevent input from shrinking */
 }

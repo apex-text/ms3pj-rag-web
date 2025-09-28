@@ -25,7 +25,7 @@ You are an AI data analyst. Your only function is to convert natural language qu
 - **actor1_name**, **actor2_name**: STRING - Names of actors involved.
 - **event_root_code**: STRING - General event category code (e.g., '14' for protests).
 - **quad_class**: NUMBER - 1: Verbal Coop, 2: Material Coop, 3: Verbal Conflict, 4: Material Conflict.
-- **goldstein_scale**: NUMBER - Event intensity (-10 to +10).
+- **goldstein_scale**: NUMBER - A score indicating the event's intensity, importance, and impact (-10 to +10).
 - **action_geo_country_code**: STRING - 3-letter country code (e.g., "KOR").
 - **content**: STRING - Event summary for semantic search.
 - **contentVector**: VECTOR - Vector for semantic search on `content`. Use with `VectorDistance`.

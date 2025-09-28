@@ -178,8 +178,8 @@ def render_floating_chat():
             # Add assistant response to state
             st.session_state.messages.append({"role": "assistant", "content": final_answer})
             
-            # Rerun to display the new user and assistant messages in the container
-            st.rerun()
+            # The script will now automatically rerun from the chat_input interaction,
+            # displaying the new messages without a forced rerun.
 
 # --- Main App Layout ---
 st.set_page_config(page_title="GDELT Dashboard", layout="wide", initial_sidebar_state="collapsed")
