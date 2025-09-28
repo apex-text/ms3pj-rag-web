@@ -1,39 +1,25 @@
 /* --- Fullscreen Iframe Styles --- */
-.main .block-container {
-    padding: 0 !important;
-}
-header[data-testid="stHeader"] {
-    display: none !important;
-}
-.iframe-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    z-index: 1;
-}
-.iframe-container iframe {
-    width: 100%;
-    height: calc(100% + 36px);
-    border: none;
-}
+.main .block-container { padding: 0 !important; }
+header[data-testid="stHeader"] { display: none !important; }
+.iframe-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; z-index: 1; }
+.iframe-container iframe { width: 100%; height: calc(100% + 36px); border: none; }
 
-/* --- Floating Chat Widget Styles (z-index: 1000) --- */
+/* --- Floating Chat Widget Styles --- */
 div[data-testid="stExpander"] {
     position: fixed;
     bottom: 2rem;
     right: 2rem;
     width: 450px;
     max-width: 90vw;
-    max-height: 80vh; /* Max height for the whole widget */
+    max-height: 80vh; /* 1. Overall height limit */
     z-index: 1000;
-    background-color: var(--secondary-backgroundColor); /* Use theme background color */
-    color: var(--text-color); /* Use theme text color */
-    border: 1px solid var(--gray-40); /* Use theme border color */
+    background-color: var(--secondary-backgroundColor);
+    color: var(--text-color);
+    border: 1px solid var(--gray-40);
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    
+    /* 2. Make the expander a column flex container */
     display: flex;
     flex-direction: column;
 }
@@ -43,22 +29,30 @@ div[data-testid="stExpander"] > div[role="button"] {
     color: white;
     border-radius: 8px 8px 0 0;
     font-weight: bold;
+    flex-shrink: 0; /* Header doesn't shrink */
 }
 
-/* This is the main content area inside the expander */
+/* 3. The content wrapper should grow and hide its own overflow */
+div[data-testid="stExpander"] > div:not([role="button"]) {
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+/* 4. The vertical block inside should be a column flex container and fill its parent */
 div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] {
-    /* This block should contain the message container and the input */
     display: flex;
     flex-direction: column;
-    /* Allow this block to grow and fill the expander's available space */
-    flex-grow: 1; 
-    overflow: hidden; /* Important to contain the children */
+    height: 100%; /* Fill the content wrapper */
 }
 
-/* Target the container wrapping the messages to make it scrollable */
-div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] div[data-testid="stContainer"]:nth-of-type(1) {
-    /* This is the message history */
-    flex-grow: 1; /* Take up all available space */
-    overflow-y: auto; /* Enable vertical scrolling */
+/* 5. The message container should grow and scroll */
+div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] > div[data-testid="stContainer"]:nth-of-type(1) {
+    flex-grow: 1;
+    overflow-y: auto;
     padding: 0.5rem;
+}
+
+/* 6. The chat input should not grow or shrink */
+div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] > div:not([data-testid="stContainer"]) {
+    flex-shrink: 0;
 }
