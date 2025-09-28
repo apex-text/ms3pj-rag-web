@@ -62,8 +62,7 @@ def generate_cosmos_sql(chat_history: list) -> str:
     logging.info(f"Generating SQL query with OpenAI using the last {len(chat_history[-10:])} messages for context.")
     response = oai_client.chat.completions.create(
         model=AZURE_OPENAI_CHAT_DEPLOYMENT,
-        messages=messages_for_api,
-        temperature=0.0
+        messages=messages_for_api
     )
     
     sql_query = response.choices[0].message.content.strip()
