@@ -4,7 +4,7 @@ header[data-testid="stHeader"] { display: none !important; }
 .iframe-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; z-index: 1; }
 .iframe-container iframe { width: 100%; height: calc(100% + 36px); border: none; }
 
-/* --- Floating Chat Widget Styles (Fixed) --- */
+/* --- Floating Chat Widget Styles (Fixed for Bottom-Up Toggle) --- */
 
 /* 1. Main Expander Container */
 div[data-testid="stExpander"] {
@@ -14,37 +14,45 @@ div[data-testid="stExpander"] {
     right: 2rem;
     width: 450px;
     max-width: 90vw;
-    height: 70vh; /* Use fixed height for predictable scroll behavior */
+    height: 70vh;
     z-index: 1000;
 
     /* Appearance */
-    border: 1px solid #CCCCCC; /* Hardcoded border color */
+    background-color: #FFFFFF; /* Hardcoded background for the parent */
+    border: 1px solid #CCCCCC;
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 
-    /* Flexbox Layout */
+    /* Flexbox Layout - REVERSED for bottom-up toggle */
     display: flex;
-    flex-direction: column;
+    flex-direction: column-reverse; /* This is the key change */
 }
 
-/* 2. Expander Header */
+/* 2. Expander Header (now at the bottom) */
 div[data-testid="stExpander"] > div[role="button"] {
     background-color: #007bff;
     color: white;
-    border-radius: 8px 8px 0 0;
+    /* Adjust border-radius for bottom position */
+    border-radius: 0 0 8px 8px;
     font-weight: bold;
-    flex-shrink: 0; /* Prevent header from shrinking */
+    flex-shrink: 0;
 }
 
-/* 3. Content Area (this will be the scrollable container) */
+/* 3. Content Area (now at the top) */
 div[data-testid="stExpander"] > div:not([role="button"]) {
-    /* Hardcoded Colors */
-    background-color: #FFFFFF; /* White background */
-    color: #333333;           /* Dark gray text */
+    background-color: #FFFFFF; /* Hardcoded background */
+    color: #333333;
     
     /* Flex & Scroll Behavior */
     flex-grow: 1;
-    overflow-y: auto; /* Make this container scrollable */
+    overflow-y: auto;
+    
+    /* Adjust border-radius for top position */
+    border-radius: 10px 10px 0 0;
+}
+
+/* 4. Inner Message Container */
+div[data-testid="stExpander"] div[data-testid="stContainer"] {
+    background-color: #FFFFFF; /* Hardcoded background for the child */
     padding: 1rem;
-    border-radius: 0 0 10px 10px;
 }

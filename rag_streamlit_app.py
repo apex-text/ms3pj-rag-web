@@ -118,7 +118,8 @@ def render_floating_chat():
             # Add assistant response to state
             st.session_state.messages.append({"role": "assistant", "content": final_answer})
             
-            # The script will now automatically re-render upon state change without a full rerun.
+            # Rerun the script to display the new messages. This is the standard Streamlit way.
+            st.rerun()
 
 # --- Main App Layout ---
 st.set_page_config(page_title="GDELT Dashboard", layout="wide", initial_sidebar_state="collapsed")
