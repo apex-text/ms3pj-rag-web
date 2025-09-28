@@ -135,7 +135,7 @@ def render_floating_chat():
                 with st.spinner("Analyzing question and querying database..."):
                     try:
                         # 1. Generate SQL query
-                        sql_query = generate_cosmos_sql(prompt, container_schema)
+                        sql_query = generate_cosmos_sql(prompt)
                         
                         # Display generated query in the main sidebar for debugging
                         st.sidebar.subheader("Last Generated SQL Query")
@@ -154,8 +154,12 @@ def render_floating_chat():
                         final_answer = interpret_results(prompt, results)
 
                     except Exception as e:
-                        st.error(f"An error occurred: {e}")
+                        import traceback
+                        tb_str = traceback.format_exc()
                         final_answer = "Sorry, I encountered an error while processing your request."
+                        st.error(f"An error occurred: {e}")
+                        with st.expander("Click to see full error details"):
+                            st.code(tb_str)
 
                 st.session_state.messages.append({"role": "assistant", "content": final_answer})
                 st.rerun()
