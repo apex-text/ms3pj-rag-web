@@ -184,62 +184,13 @@ def render_floating_chat():
 # --- Main App Layout ---
 st.set_page_config(page_title="GDELT Dashboard", layout="wide", initial_sidebar_state="collapsed")
 
-# 1. Inject CSS for fullscreen Power BI and floating chat
-st.markdown("""
-<style>
-    /* --- Fullscreen Iframe Styles --- */
-    .main .block-container {
-        padding: 0 !important;
-    }
-    header[data-testid="stHeader"] {
-        display: none !important;
-    }
-    .iframe-container {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        z-index: 1;
-    }
-    .iframe-container iframe {
-        width: 100%;
-        height: calc(100% + 36px);
-        border: none;
-    }
+# Function to load and inject an external CSS file
+def load_css(file_path):
+    with open(file_path) as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
-    /* --- Floating Chat Widget Styles (z-index: 1000) --- */
-    div[data-testid="stExpander"] {
-        position: fixed;
-        bottom: 2rem;
-        right: 2rem;
-        width: 450px;
-        max-width: 90vw;
-        max-height: 80vh; /* Set a max-height for the entire expander */
-        z-index: 1000;
-        background-color: #FFFFFF;
-        border: 1px solid #CCCCCC;
-        border-radius: 10px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        display: flex; /* Use flexbox for better layout control */
-        flex-direction: column; /* Stack children vertically */
-    }
-    div[data-testid="stExpander"] > div[role="button"] {
-        background-color: #007bff;
-        color: white;
-        border-radius: 8px 8px 0 0;
-        font-weight: bold;
-    }
-
-    /* Target the container wrapping the messages to make it scrollable */
-    div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] div[data-testid="stContainer"]:nth-of-type(1) {
-        height: 45vh; /* Fixed height for the message area */
-        overflow-y: auto; /* Make it scrollable */
-        padding-right: 10px; /* Space for scrollbar */
-    }
-</style>
-""", unsafe_allow_html=True)
+# 1. Inject CSS from external file
+load_css("assets/style.css")
 
 # 2. Display the Power BI dashboard in fullscreen
 st.sidebar.title("SQL Query")
