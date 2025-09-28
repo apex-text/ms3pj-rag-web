@@ -11,48 +11,44 @@ div[data-testid="stExpander"] {
     right: 2rem;
     width: 450px;
     max-width: 90vw;
-    max-height: 80vh; /* 1. Overall height limit */
+    max-height: 60vh; /* Overall height limit for the widget */
     z-index: 1000;
-    background-color: var(--secondary-backgroundColor);
-    color: var(--text-color);
     border: 1px solid var(--gray-40);
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     
-    /* 2. Make the expander a column flex container */
+    /* Use flexbox to manage the inner layout */
     display: flex;
     flex-direction: column;
 }
 
+/* Expander Header */
 div[data-testid="stExpander"] > div[role="button"] {
     background-color: #007bff;
     color: white;
     border-radius: 8px 8px 0 0;
     font-weight: bold;
-    flex-shrink: 0; /* Header doesn't shrink */
+    flex-shrink: 0; /* Prevent header from shrinking */
 }
 
-/* 3. The content wrapper should grow and hide its own overflow */
+/* The content area below the header */
 div[data-testid="stExpander"] > div:not([role="button"]) {
-    flex-grow: 1;
-    overflow: hidden;
-}
-
-/* 4. The vertical block inside should be a column flex container and fill its parent */
-div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] {
+    background-color: var(--secondary-backgroundColor);
+    color: var(--text-color);
+    flex-grow: 1; /* Allow content area to fill the available vertical space */
+    overflow: hidden; /* Crucial for enabling scrolling on a child element */
     display: flex;
     flex-direction: column;
-    height: 100%; /* Fill the content wrapper */
 }
 
-/* 5. The message container should grow and scroll */
-div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] > div[data-testid="stContainer"]:nth-of-type(1) {
-    flex-grow: 1;
-    overflow-y: auto;
+/* The container holding the actual messages */
+div[data-testid="stContainer"] {
+    flex-grow: 1; /* Allow the message list to fill the available space */
+    overflow-y: auto; /* THIS is the key: enable vertical scrolling */
     padding: 0.5rem;
 }
 
-/* 6. The chat input should not grow or shrink */
-div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] > div:not([data-testid="stContainer"]) {
-    flex-shrink: 0;
+/* The container for the chat input at the bottom */
+div[data-testid="stChatInputContainer"] {
+    flex-shrink: 0; /* Prevent the input area from shrinking */
 }
