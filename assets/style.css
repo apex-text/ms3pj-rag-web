@@ -4,7 +4,7 @@ header[data-testid="stHeader"] { display: none !important; }
 .iframe-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; z-index: 1; }
 .iframe-container iframe { width: 100%; height: calc(100% + 36px); border: none; }
 
-/* --- Floating Chat Widget Styles (Simplified & Robust) --- */
+/* --- Floating Chat Widget Styles (Fixed) --- */
 
 /* 1. Main Expander Container */
 div[data-testid="stExpander"] {
@@ -14,11 +14,11 @@ div[data-testid="stExpander"] {
     right: 2rem;
     width: 450px;
     max-width: 90vw;
-    max-height: 60vh; /* Max height for the entire widget */
+    height: 70vh; /* Use fixed height for predictable scroll behavior */
     z-index: 1000;
 
     /* Appearance */
-    border: 1px solid var(--gray-40);
+    border: 1px solid #CCCCCC; /* Hardcoded border color */
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 
@@ -33,23 +33,18 @@ div[data-testid="stExpander"] > div[role="button"] {
     color: white;
     border-radius: 8px 8px 0 0;
     font-weight: bold;
+    flex-shrink: 0; /* Prevent header from shrinking */
 }
 
-/* 3. Content Area (directly inside the expander) */
+/* 3. Content Area (this will be the scrollable container) */
 div[data-testid="stExpander"] > div:not([role="button"]) {
-    /* This is the key: apply background and color here */
-    background-color: var(--secondary-backgroundColor);
-    color: var(--text-color);
+    /* Hardcoded Colors */
+    background-color: #FFFFFF; /* White background */
+    color: #333333;           /* Dark gray text */
     
-    /* Allow this area to grow and enable scrolling on its child */
+    /* Flex & Scroll Behavior */
     flex-grow: 1;
-    overflow: hidden;
+    overflow-y: auto; /* Make this container scrollable */
+    padding: 1rem;
     border-radius: 0 0 10px 10px;
-}
-
-/* 4. Message Container (the one that needs to scroll) */
-div[data-testid="stExpander"] div[data-testid="stContainer"] {
-    height: 100%; /* Fill the parent content area */
-    overflow-y: auto; /* Enable vertical scrolling */
-    padding: 0.5rem;
 }
