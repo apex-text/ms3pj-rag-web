@@ -33,8 +33,8 @@ div[data-testid="stExpander"] {
     border: 1px solid #CCCCCC;
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    display: flex; /* Use flexbox for layout */
-    flex-direction: column; /* Stack header and content vertically */
+    display: flex;
+    flex-direction: column;
 }
 
 div[data-testid="stExpander"] > div[role="button"] {
@@ -42,25 +42,22 @@ div[data-testid="stExpander"] > div[role="button"] {
     color: white;
     border-radius: 8px 8px 0 0;
     font-weight: bold;
-    flex-shrink: 0; /* Prevent header from shrinking */
 }
 
 /* This is the main content area inside the expander */
 div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] {
+    /* This block should contain the message container and the input */
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* Prevent content from spilling out */
-    flex-grow: 1; /* Allow content area to fill available vertical space */
+    /* Allow this block to grow and fill the expander's available space */
+    flex-grow: 1; 
+    overflow: hidden; /* Important to contain the children */
 }
 
 /* Target the container wrapping the messages to make it scrollable */
 div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] div[data-testid="stContainer"]:nth-of-type(1) {
-    flex-grow: 1; /* Allow message container to take up available space */
-    overflow-y: auto; /* Make it scrollable */
+    /* This is the message history */
+    flex-grow: 1; /* Take up all available space */
+    overflow-y: auto; /* Enable vertical scrolling */
     padding: 0.5rem;
-}
-
-/* Target the chat input container at the bottom */
-div[data-testid="stChatInputContainer"] {
-    flex-shrink: 0; /* Prevent input from shrinking */
 }
