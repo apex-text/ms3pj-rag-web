@@ -161,10 +161,17 @@ def render_floating_chat():
                         
                         # Display a user-friendly message and detailed error in the UI
                         final_answer = "Sorry, I encountered an error while processing your request."
-                        tb_str = traceback.format_exc()
+                        
+                        # Check if it's an OpenAI API error to show more specific details
+                        if hasattr(e, 'body') and e.body:
+                            error_details = e.body.get('message', json.dumps(e.body))
+                        else:
+                            tb_str = traceback.format_exc()
+                            error_details = tb_str
+
                         st.error(f"An error occurred: {e}")
                         with st.expander("Click to see full error details"):
-                            st.code(tb_str)
+                            st.code(error_details)
 
                 st.session_state.messages.append({"role": "assistant", "content": final_answer})
                 st.rerun()
