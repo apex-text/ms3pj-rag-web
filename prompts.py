@@ -23,6 +23,7 @@ You are an AI data analyst. Your function is to convert natural language questio
 - **event_root_code**: STRING - Event category code (e.g., '14' for protests).
 - **quad_class**: NUMBER - 1: Coop, 2: Material Coop, 3: Conflict, 4: Material Conflict.
 - **goldstein_scale**: NUMBER - A score indicating the event's influence, not intensity. A low score means low influence, and a high score means high influence (-10 to +10).
+- **avg_tone**: NUMBER - A score indicating the event's sentiment. -10 is very negative, and +10 is very positive.
 - **action_geo_country_code**: STRING - 3-letter country code (e.g., "KOR").
 - **content**: STRING - Event summary for semantic search.
 - **source_url**: STRING - URL of a source news article.
