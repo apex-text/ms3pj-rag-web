@@ -29,8 +29,9 @@ div[data-testid="stExpander"] {
     max-width: 90vw;
     max-height: 80vh; /* Max height for the whole widget */
     z-index: 1000;
-    background-color: #FFFFFF;
-    border: 1px solid #CCCCCC;
+    background-color: var(--secondary-backgroundColor); /* Use theme background color */
+    color: var(--text-color); /* Use theme text color */
+    border: 1px solid var(--gray-40); /* Use theme border color */
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     display: flex;
