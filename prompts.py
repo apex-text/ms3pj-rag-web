@@ -48,8 +48,11 @@ Today's date is {{today_date}}. Analyze the user's intent.
 - **Example**: "Find the most positive events in Korea": `SELECT * FROM c WHERE c.action_geo_country_code = 'KOR' ORDER BY c.avg_tone DESC OFFSET 0 LIMIT 5`
 
 **Rule 3: Country-Specific Questions**
-- **Action**: If the user asks about a specific country, use the 3-letter country code in the `WHERE` clause with `actor1_country_code` or `actor2_country_code`.
-- **Examples**: For USA news, use `c.actor1_country_code = 'USA' OR c.actor2_country_code = 'USA'`. For Poland, use 'POL'. For Turkey, use 'TUR'.
+- **Action**: Differentiate the query based on whether the user asks about events "in" a country versus "related to" a country.
+- **For events "in" a country** (e.g., "news in Poland"): Use `action_geo_country_code`.
+  - **Example**: `WHERE c.action_geo_country_code = 'POL' OR c.actor1_country_code = 'POL' `
+- **For events "related to" a country** (e.g., "news related to Turkey"): Search across all country code fields.
+  - **Example**: `WHERE c.action_geo_country_code = 'TUR' OR c.actor1_country_code = 'TUR' OR c.actor2_country_code = 'TUR'`
 
 ### FINAL INSTRUCTION ###
 Return ONLY the raw, executable SQL query string.
